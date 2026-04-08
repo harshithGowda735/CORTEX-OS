@@ -46,7 +46,8 @@ const VerifyEmail = () => {
 
         setLoading(true);
         try {
-            const response = await axios.post(`${import.meta.env.VITE_API_URL || 'http'}://localhost:5000/api/user/verify-email`, {
+            const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:5000';
+            const response = await axios.post(`${API_URL}/api/user/verify-email`, {
                 email,
                 code
             });
@@ -64,7 +65,8 @@ const VerifyEmail = () => {
     const handleResend = async () => {
         setResending(true);
         try {
-            const response = await axios.post(`${import.meta.env.VITE_API_URL || 'http'}://localhost:5000/api/user/resend-otp`, { email });
+            const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:5000';
+            const response = await axios.post(`${API_URL}/api/user/resend-otp`, { email });
             if (response.data.success) {
                 toast.success("Verification code resent");
             }

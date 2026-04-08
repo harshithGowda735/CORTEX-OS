@@ -26,7 +26,8 @@ const Register = () => {
         e.preventDefault();
         setLoading(true);
         try {
-            const response = await axios.post('http://localhost:5000/api/user/register', data);
+            const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:5000';
+            const response = await axios.post(`${API_URL}/api/user/register`, data);
             if (response.data.success) {
                 toast.success(response.data.message);
                 navigate('/verify-email', { state: { email: data.email } });

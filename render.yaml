@@ -1,0 +1,29 @@
+# yaml-language-server: $schema=https://render.com/schema/render.yaml.json
+services:
+  - type: web
+    name: cortex-agri-health-mcp-backend
+    env: node
+    plan: free
+    buildCommand: npm install
+    startCommand: node index.js
+    rootDir: server
+    envVars:
+      - key: PORT
+        value: 5000
+      - key: NODE_VERSION
+        value: 20.0.0
+      - key: MONGODB_URI
+        value: "" # Set in Render Dashboard
+        sync: false
+      - key: JWT_SECRET
+        value: "" # Set in Render Dashboard
+        sync: false
+      - key: RESEND_API_KEY
+        value: "" # Set in Render Dashboard
+        sync: false
+      - key: FRONTEND_URL
+        value: "" # Set in Render Dashboard
+        sync: false
+      - key: GEMINI_API_KEY
+        value: "" # Set in Render Dashboard
+        sync: false

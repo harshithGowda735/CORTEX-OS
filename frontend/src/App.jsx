@@ -16,7 +16,7 @@ import PayFlowCard from './components/Hospital/PayFlowCard';
 import TrafficCard from './components/Hospital/TrafficCard';
 import DoctorCard from './components/Hospital/DoctorCard';
 
-const SOCKET_URL = 'http://localhost:5000';
+const SOCKET_URL = import.meta.env.VITE_API_URL || 'http://localhost:5000';
 
 function Dashboard() {
   const [activeTab, setActiveTab] = useState('healthcare');

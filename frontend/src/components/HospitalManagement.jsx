@@ -9,8 +9,8 @@ import {
 } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 
-const SOCKET_URL = 'http://localhost:5000';
-const API = 'http://localhost:5000/api/hospital';
+const SOCKET_URL = import.meta.env.VITE_API_URL || 'http://localhost:5000';
+const API = `${SOCKET_URL}/api/hospital`;
 
 export default function HospitalManagement() {
   const navigate = useNavigate();
