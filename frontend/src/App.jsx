@@ -6,6 +6,7 @@ import { Routes, Route, useNavigate, Navigate } from 'react-router-dom';
 import Register from './components/Auth/Register';
 import Login from './components/Auth/Login';
 import VerifyEmail from './components/Auth/VerifyEmail';
+import HospitalManagement from './components/HospitalManagement';
 import toast from 'react-hot-toast';
 
 // New Hospital Components
@@ -44,6 +45,20 @@ function Dashboard() {
       scrollToBottom();
     });
 
+    newSocket.on('hospital-alert', (data) => {
+      // Check if alert is meant for this user (or show all in demo mode)
+      if (!user || data.userId === user._id || data.userId === 'demo') {
+        toast((t) => (
+          <span className="flex flex-col gap-1">
+            <span className="font-black text-xs uppercase flex items-center gap-2 text-red-500">
+              <ShieldAlert size={14} /> Hospital Emergency Response
+            </span>
+            <span className="text-sm font-medium">{data.message}</span>
+          </span>
+        ), { duration: 6000, position: 'top-center', icon: '🏥' });
+      }
+    });
+
     return () => {
         newSocket.disconnect();
     };
@@ -72,14 +87,16 @@ function Dashboard() {
       });
       const data = await response.json();
       
-      setSummary(data.answer);
+      setSummary(data.answer || "Orchestration complete.");
       const results = data.data; // Unified output from Response Agent (Module 4)
 
-      if (results.healthcare) setHealthResult(results.healthcare);
-      if (results.healthcare?.riskLevel === 'High') setIsEmergency(true);
-      if (results.traffic) setTrafficResult(results.traffic);
-      if (results.billing) setBillingData(results.billing);
-      if (results.vitals) setVitalsData(results.vitals.current);
+      if (results) {
+        if (results.healthcare) setHealthResult(results.healthcare);
+        if (results.healthcare?.riskLevel === 'High') setIsEmergency(true);
+        if (results.traffic) setTrafficResult(results.traffic);
+        if (results.billing) setBillingData(results.billing);
+        if (results.vitals) setVitalsData(results.vitals.current);
+      }
 
       // Auto-switch to healthcare analysis on result
       setActiveTab('healthcare');
@@ -112,7 +129,20 @@ function Dashboard() {
             <div className="flex items-center gap-4 text-[10px] font-black uppercase tracking-widest text-slate-400">
                 <div className="flex items-center gap-1.5"><div className="w-1.5 h-1.5 rounded-full bg-emerald-500"></div> System Online</div>
                 <div className="w-px h-4 bg-slate-700"></div>
-                <div className="flex items-center gap-1.5"><div className="w-1.5 h-1.5 rounded-full bg-blue-500"></div> {user?.name || "Guest Patient"}</div>
+                <div className="flex items-center gap-1.5">
+                  <div className={`w-1.5 h-1.5 rounded-full ${user?.role === 'hospital' ? 'bg-blue-500' : 'bg-emerald-500'}`}></div> 
+                  {user?.name || "Guest Patient"} 
+                  <span className="opacity-50 ml-1">({user?.role || 'Guest'})</span>
+                </div>
+                <div className="w-px h-4 bg-slate-700"></div>
+                {user?.role === 'hospital' && (
+                  <button onClick={() => navigate('/management')} className="px-4 py-2 bg-cyan-500/10 text-cyan-400 rounded-xl hover:bg-cyan-500/20 transition-all border border-cyan-500/20 text-[9px] font-black uppercase tracking-widest">
+                    🏥 Hospital Command
+                  </button>
+                )}
+                <button onClick={() => { localStorage.removeItem('user'); navigate('/login'); }} className="px-4 py-2 bg-red-500/10 text-red-400 rounded-xl hover:bg-red-500/20 transition-all border border-red-500/20 flex items-center gap-1.5">
+                  <LogOut size={12} /> Logout
+                </button>
             </div>
         </div>
       </header>
@@ -285,13 +315,22 @@ function Dashboard() {
   );
 }
 
+function ProtectedRoute({ children }) {
+  const user = JSON.parse(localStorage.getItem('user'));
+  if (!user) {
+    return <Navigate to="/login" replace />;
+  }
+  return children;
+}
+
 function App() {
   return (
     <Routes>
       <Route path="/register" element={<Register />} />
       <Route path="/login" element={<Login />} />
       <Route path="/verify-email" element={<VerifyEmail />} />
-      <Route path="/" element={<Dashboard />} />
+      <Route path="/management" element={<ProtectedRoute><HospitalManagement /></ProtectedRoute>} />
+      <Route path="/" element={<ProtectedRoute><Dashboard /></ProtectedRoute>} />
     </Routes>
   );
 }

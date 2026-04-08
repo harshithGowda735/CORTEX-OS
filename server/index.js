@@ -8,6 +8,7 @@ const helmet = require('helmet');
 const connectDB = require('./config/connectDB');
 const userRouter = require('./routes/userRoute');
 const bookingRouter = require('./routes/bookingRoute');
+const hospitalRouter = require('./routes/hospitalRoute');
 const { setupSocketHandlers } = require('./core/socket/socketHandler');
 const orchestrator = require('./core/orchestrator/orchestrator');
 
@@ -37,6 +38,9 @@ app.use(cookieParser());
 // Setup Socket.io
 setupSocketHandlers(io);
 
+// Expose io instance to controllers via app
+app.set('io', io);
+
 // Health check
 app.get('/api/health', (req, res) => {
   res.json({ status: 'OK', message: 'CORTEX-OS MCP Backend is running' });
@@ -47,6 +51,9 @@ app.use('/api/user', userRouter);
 
 // Booking Routes
 app.use('/api/booking', bookingRouter);
+
+// Hospital Management Routes
+app.use('/api/hospital', hospitalRouter);
 
 // Chat Endpoint (Protected or public depending on preference, currently public)
 app.post('/api/chat', async (req, res) => {

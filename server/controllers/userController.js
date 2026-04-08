@@ -8,7 +8,7 @@ const generateRefreshToken = require('../utils/generateRefreshToken');
 
 const registerUserController = async (req, res) => {
   try {
-    const { name, email, password } = req.body;
+    const { name, email, password, role } = req.body;
 
     if (!name || !email || !password) {
       return res.status(400).json({
@@ -34,11 +34,14 @@ const registerUserController = async (req, res) => {
       name,
       email,
       password,
+      role: role || 'patient',
+      verify_email: false, // RESTORED: User must verify now
       otp,
       otp_expiry,
     });
 
     const save = await newUser.save();
+    console.log(`[DEMO] OTP for ${email}: ${otp}`); 
 
     const emailContent = verifyEmailTemplate(name, otp);
     await sendEmail({
@@ -55,6 +58,7 @@ const registerUserController = async (req, res) => {
         _id: save._id,
         email: save.email,
         name: save.name,
+        role: save.role,
       },
     });
   } catch (error) {
@@ -194,6 +198,7 @@ const loginController = async (req, res) => {
         _id: user._id,
         name: user.name,
         email: user.email,
+        role: user.role,
         accessToken,
         refreshToken,
       },
@@ -235,6 +240,7 @@ const resendOtpController = async (req, res) => {
         user.otp = otp;
         user.otp_expiry = otp_expiry;
         await user.save();
+        console.log(`[DEMO] New OTP for ${email}: ${otp}`);
 
         const emailContent = verifyEmailTemplate(user.name, otp);
         await sendEmail({

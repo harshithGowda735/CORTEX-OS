@@ -4,10 +4,12 @@ const memoryService = require('../memory/memoryService');
 const server = require('../mcp/server');
 const { initMCPTools } = require('../mcp/tools');
 const { emitAgentActivity } = require('../socket/socketHandler');
+const { autonomousBook } = require('../../controllers/hospitalController');
 
 /**
  * MODULE 1: MCP CORE (ORCHESTRATOR + CONTEXT)
  * MODULE 6: TOOL EXECUTION FROM ORCHESTRATOR
+ * MODULE 12: AUTONOMOUS BOOKING & RESOURCE ALLOCATION
  */
 
 // Initialize MCP Tools once
@@ -44,7 +46,6 @@ const processQuery = async (query, userId = 'default_user', io) => {
   });
 
   // 🔥 3. MCP TOOL EXECUTION (MODULE 6)
-  // Mapping domain IDs to their registered MCP Tool names
   const toolMap = {
     healthcare: "healthcare_diagnostics",
     vitals: "vitals_monitoring",
@@ -65,11 +66,7 @@ const processQuery = async (query, userId = 'default_user', io) => {
     });
 
     try {
-      // THE CORE MCP CALL
       const result = await server.callTool(toolName, context);
-      
-      // Context is already updated inside the standard agents, 
-      // but we ensure it's in context.results for the Response Agent.
       context.results[domain] = result;
 
       emitAgentActivity(userId, {
@@ -92,7 +89,56 @@ const processQuery = async (query, userId = 'default_user', io) => {
   // 🔥 PARALLEL EXECUTION (TRUE MCP)
   await Promise.all(agentTasks);
 
-  // 🔥 4. RESPONSE SYNTHESIS (MODULE 4)
+  // 🔥 4. AUTONOMOUS BOOKING (MODULE 12)
+  // If healthcare risk is High or Moderate, auto-book appointment and allocate resources
+  const healthResult = context.results.healthcare;
+  const opsResult = context.results.operations;
+
+  if (healthResult && (healthResult.riskLevel === 'High' || healthResult.riskLevel === 'Moderate')) {
+    emitAgentActivity(userId, {
+      agent: 'Auto-Booking',
+      message: `${healthResult.riskLevel} risk detected. Initiating autonomous resource allocation...`,
+      status: 'active',
+      timestamp: new Date()
+    });
+
+    try {
+      const bookingResult = await autonomousBook({
+        userId: userId === 'demo_user' ? '69d63cad259998ad67ae6286' : userId,
+        department: opsResult?.assignedSpecialization || 'General Consultation',
+        severity: healthResult.riskLevel,
+        doctorId: opsResult?.assignedDoctorId || null,
+        reason: `Auto-booked: ${healthResult.assessment}`
+      });
+
+      context.results.autoBooking = bookingResult;
+
+      emitAgentActivity(userId, {
+        agent: 'Auto-Booking',
+        message: bookingResult.message || 'Booking completed.',
+        status: 'success',
+        timestamp: new Date()
+      });
+
+      // Emit hospital-update so the Management Dashboard updates in real-time
+      if (io) {
+        io.emit('hospital-update', {
+          type: 'auto-booking',
+          data: bookingResult
+        });
+      }
+    } catch (error) {
+      console.error('❌ [AUTO-BOOKING] Failed:', error.message);
+      emitAgentActivity(userId, {
+        agent: 'Auto-Booking',
+        message: `Booking failed: ${error.message}`,
+        status: 'error',
+        timestamp: new Date()
+      });
+    }
+  }
+
+  // 🔥 5. RESPONSE SYNTHESIS (MODULE 4)
   emitAgentActivity(userId, {
     agent: 'Response',
     message: 'Synthesizing final output...',
@@ -102,7 +148,7 @@ const processQuery = async (query, userId = 'default_user', io) => {
 
   const finalResponse = await responseAgent.generateResponse(context.results, context);
 
-  // 🔥 5. MEMORY UPDATE (CONTEXT PERSISTENCE - MODULE 7)
+  // 🔥 6. MEMORY UPDATE (CONTEXT PERSISTENCE - MODULE 7)
   memoryService.saveInteraction(userId, {
     query,
     response: finalResponse.answer,

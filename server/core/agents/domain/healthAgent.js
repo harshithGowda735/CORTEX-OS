@@ -2,35 +2,40 @@ const { emitAgentActivity } = require('../../socket/socketHandler');
 
 const analyzeHealth = async (context) => {
   const { query, userId } = context;
-  emitAgentActivity(userId, { agent: 'Healthcare Agent', message: 'Checking symptom patterns against medical database...', status: 'thinking' });
+  emitAgentActivity(userId, { agent: 'Healthcare Agent', message: 'Scanning symptom database...', status: 'thinking' });
   
-  await new Promise(resolve => setTimeout(resolve, 2000));
+  await new Promise(resolve => setTimeout(resolve, 1500));
 
   let response = {
     domain: 'Healthcare',
     assessment: '',
     riskLevel: 'Low',
+    riskProbability: '5%',
+    marker: 'Routine',
     nextSteps: []
   };
 
   const lowerQuery = query.toLowerCase();
 
   if (lowerQuery.includes('pain') && lowerQuery.includes('chest')) {
-    response.assessment = "Acute discomfort detected in thoracic region. High likelihood of myocardial distress.";
+    response.assessment = "Acute discomfort in thoracic region reported. Cardiovascular distress suspected.";
     response.riskLevel = 'High';
-    response.riskProbability = '82%';
-    response.nextSteps = ["Emergency medical evaluation recommended", "Check vitals immediately", "Route to nearest Cardiac Care Unit"];
-  } else if (lowerQuery.includes('fever') || lowerQuery.includes('cold') || lowerQuery.includes('cough')) {
-    response.assessment = "Symptoms consistent with upper respiratory infection.";
+    response.riskProbability = '88%';
+    response.marker = 'Emergency';
+    response.nextSteps = ["Immediate clinical triage", "Administer ASA if appropriate", "Continuous vitals profiling"];
+  } else if (lowerQuery.includes('fever') || lowerQuery.includes('cold')) {
+    response.assessment = "Symptoms indicate standard viral respiratory infection.";
     response.riskLevel = 'Moderate';
-    response.nextSteps = ["Hydrate and rest", "Monitor temperature", "Consult GP if symptoms persist beyond 48hrs"];
+    response.riskProbability = '25%';
+    response.marker = 'Urgent';
+    response.nextSteps = ["In-person consultation within 24h", "Temp monitoring", "Hydration protocol"];
   } else {
-    response.assessment = "General wellness query detected.";
+    response.assessment = "Predictive wellness check. No acute pathology detected.";
     response.riskLevel = 'Low';
-    response.nextSteps = ["Maintain balanced diet", "Regular screening recommended"];
+    response.nextSteps = ["Annual physical exam", "Standard biometric tracking"];
   }
 
-  emitAgentActivity(userId, { agent: 'Healthcare Agent', message: 'Health assessment ready.', status: 'done' });
+  emitAgentActivity(userId, { agent: 'Healthcare Agent', message: 'Clinical assessment synthesized.', status: 'done' });
   context.results.healthcare = response;
   return response;
 };

@@ -8,7 +8,8 @@ const Register = () => {
     const [data, setData] = useState({
         name: "",
         email: "",
-        password: ""
+        password: "",
+        role: "patient"
     });
     const [loading, setLoading] = useState(false);
     const navigate = useNavigate();
@@ -25,7 +26,7 @@ const Register = () => {
         e.preventDefault();
         setLoading(true);
         try {
-            const response = await axios.post(`${import.meta.env.VITE_API_URL || 'http'}://localhost:5000/api/user/register`, data);
+            const response = await axios.post('http://localhost:5000/api/user/register', data);
             if (response.data.success) {
                 toast.success(response.data.message);
                 navigate('/verify-email', { state: { email: data.email } });
@@ -102,12 +103,42 @@ const Register = () => {
                         </div>
                     </div>
 
+                    <div className="space-y-3">
+                        <label className="text-sm font-medium text-[#94a3b8]">Register as</label>
+                        <div className="grid grid-cols-2 gap-3">
+                            <button
+                                type="button"
+                                onClick={() => setData(prev => ({ ...prev, role: 'patient' }))}
+                                className={`py-3 px-4 rounded-xl border-2 transition-all flex flex-col items-center gap-2 ${
+                                    data.role === 'patient' 
+                                    ? 'border-[#10b981] bg-[#10b981]/10 text-[#10b981]' 
+                                    : 'border-[#334155] bg-[#0f172a] text-[#475569] hover:border-[#475569]'
+                                }`}
+                            >
+                                <User size={20} />
+                                <span className="text-[10px] uppercase tracking-widest font-black">Patient</span>
+                            </button>
+                            <button
+                                type="button"
+                                onClick={() => setData(prev => ({ ...prev, role: 'hospital' }))}
+                                className={`py-3 px-4 rounded-xl border-2 transition-all flex flex-col items-center gap-2 ${
+                                    data.role === 'hospital' 
+                                    ? 'border-[#3b82f6] bg-[#3b82f6]/10 text-[#3b82f6]' 
+                                    : 'border-[#334155] bg-[#0f172a] text-[#475569] hover:border-[#475569]'
+                                }`}
+                            >
+                                <Loader2 size={20} />
+                                <span className="text-[10px] uppercase tracking-widest font-black">Hospital Staff</span>
+                            </button>
+                        </div>
+                    </div>
+
                     <button
                         type="submit"
                         disabled={loading}
                         className="w-full bg-gradient-to-r from-[#10b981] to-[#059669] hover:from-[#34d399] hover:to-[#10b981] py-3 rounded-xl font-semibold transform transition-all active:scale-95 disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2 group shadow-lg shadow-[#10b981]/20"
                     >
-                        {loading ? <Loader2 className="animate-spin" size={20} /> : "Create Account"}
+                        {loading ? <Loader2 className="animate-spin" size={20} /> : "Send Verification Code"}
                     </button>
                 </form>
 
