@@ -1,25 +1,29 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { io } from 'socket.io-client';
-import { Cloud, Droplets, Wind, Navigation, Activity, Leaf, Stethoscope, Search, RefreshCw, Send } from 'lucide-react';
+import { Navigation, Activity, Stethoscope, Search, RefreshCw, Send, LogOut, User as UserIcon, Calendar, Clock, MapPin } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
+import { Routes, Route, useNavigate, Navigate } from 'react-router-dom';
+import Register from './components/Auth/Register';
+import Login from './components/Auth/Login';
+import VerifyEmail from './components/Auth/VerifyEmail';
+import toast from 'react-hot-toast';
 
-// Mock Socket initialization
 const SOCKET_URL = 'http://localhost:5000';
 
-function App() {
-  const [activeTab, setActiveTab] = useState('agriculture');
+function Dashboard() {
+  const [activeTab, setActiveTab] = useState('healthcare');
   const [query, setQuery] = useState('');
   const [isProcessing, setIsProcessing] = useState(false);
   const [agentLogs, setAgentLogs] = useState([]);
   const [socket, setSocket] = useState(null);
+  const [user, setUser] = useState(JSON.parse(localStorage.getItem('user')));
+  const navigate = useNavigate();
   
   // Data States
   const [healthResult, setHealthResult] = useState('');
-  const [agriResult, setAgriResult] = useState({ ph: '--', condition: '--', recommendation: '--' });
   const [trafficResult, setTrafficResult] = useState({ congestion: '--', bestRoute: '--' });
   const [summary, setSummary] = useState('');
-
-  const logsEndRef = useRef(null);
+  const [bookings, setBookings] = useState([]);
 
   useEffect(() => {
     // Initialize Socket
@@ -31,13 +35,68 @@ function App() {
       scrollToBottom();
     });
 
+    if (user) {
+        fetchUserBookings();
+    }
+
     return () => newSocket.disconnect();
   }, []);
+
+  const fetchUserBookings = async () => {
+      try {
+          const response = await fetch(`${SOCKET_URL}/api/booking/user-bookings`, {
+              headers: {
+                  'Authorization': `Bearer ${localStorage.getItem('token')}` // Note: Need to check if token is stored in localStorage
+              }
+          });
+          const data = await response.json();
+          if (data.success) {
+              setBookings(data.data);
+          }
+      } catch (error) {
+          console.error("Fetch bookings error:", error);
+      }
+  };
+
+  const handleBook = async (dept) => {
+    const loadingToast = toast.loading(`Booking ${dept}...`);
+    try {
+        const response = await fetch(`${SOCKET_URL}/api/booking/create`, {
+            method: 'POST',
+            headers: { 
+                'Content-Type': 'application/json',
+                'Authorization': `Bearer ${localStorage.getItem('token')}`
+            },
+            body: JSON.stringify({
+                department: dept,
+                appointmentDate: new Date().toISOString(),
+                timeSlot: "2:30 PM", // Mock for demo
+                reason: "General Checkup"
+            })
+        });
+        const data = await response.json();
+        
+        if (data.success) {
+            toast.success("Appointment Confirmed!", { id: loadingToast });
+            fetchUserBookings();
+        } else {
+            toast.error(data.message || "Booking failed", { id: loadingToast });
+        }
+    } catch (error) {
+        toast.error("Network error on booking", { id: loadingToast });
+    }
+  };
 
   const scrollToBottom = () => {
     setTimeout(() => {
       logsEndRef.current?.scrollIntoView({ behavior: 'smooth' });
     }, 100);
+  };
+
+  const handleLogout = () => {
+    localStorage.removeItem('user');
+    toast.success("Logged out from CORTEX-OS");
+    navigate('/login');
   };
 
   const handleQuerySubmit = async (e) => {
@@ -52,24 +111,14 @@ function App() {
       const response = await fetch(`${SOCKET_URL}/api/chat`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ query, userId: 'demo_user' })
+        body: JSON.stringify({ query, userId: user?._id || 'demo_user' })
       });
       const data = await response.json();
       
       setSummary(data.answer);
       
-      // Extract data if agents ran
       const healthData = data.results?.find(r => r.domain === 'Healthcare');
       if (healthData) setHealthResult(`Assessment: ${healthData.assessment}\nRisk: ${healthData.riskLevel}\nNext Steps: ${healthData.nextSteps.join(', ')}`);
-
-      const agriData = data.results?.find(r => r.domain === 'Agriculture');
-      if (agriData && agriData.data) {
-        setAgriResult({
-          ph: agriData.data.ph || '--',
-          condition: agriData.data.condition || agriData.data.status || agriData.data.suggestions?.join(', ') || '--',
-          recommendation: agriData.recommendation || '--'
-        });
-      }
 
       const trafficData = data.results?.find(r => r.domain === 'Traffic');
       if (trafficData) {
@@ -81,127 +130,200 @@ function App() {
 
     } catch (error) {
       console.error("Error:", error);
-      setAgentLogs(prev => [...prev, { agent: 'System', message: 'Failed to connect to orchestrator core.', status: 'error' }]);
+      setAgentLogs(prev => [...prev, { agent: 'System', message: 'Failed to connect to CORTEX core.', status: 'error' }]);
     }
 
     setIsProcessing(false);
   };
 
   return (
-    <div className="min-h-screen bg-slate-50 font-sans text-slate-800 pb-12">
-      {/* Header */}
-      <header className="bg-gradient-to-br from-teal-700 to-emerald-700 text-white py-8 px-6 text-center shadow-lg relative overflow-hidden">
-        <div className="absolute top-0 left-0 w-full h-full opacity-10 pointer-events-none" style={{ backgroundImage: "url('data:image/svg+xml,%3Csvg width=\\'60\\' height=\\'60\\' viewBox=\\'0 0 60 60\\' xmlns=\\'http://www.w3.org/2000/svg\\'%3E%3Cg fill=\\'none\\' fill-rule=\\'evenodd\\'%3E%3Cg fill=\\'%23ffffff\\' fill-opacity=\\'1\\'%3E%3Cpath d=\\'M36 34v-4h-2v4h-4v2h4v4h2v-4h4v-2h-4zm0-30V0h-2v4h-4v2h4v4h2V6h4V4h-4zM6 34v-4H4v4H0v2h4v4h2v-4h4v-2H6zM6 4V0H4v4H0v2h4v4h2V6h4V4H6z\\'/%3E%3C/g%3E%3C/g%3E%3C/svg%3E')" }}></div>
-        <h1 className="text-3xl font-bold tracking-tight z-10 relative">AgriHealthTraffic Agent <span className="opacity-70 text-lg font-normal ml-2">MCP Core</span></h1>
-        <p className="mt-2 text-emerald-50 max-w-2xl mx-auto z-10 relative">Multi-agent orchestration for predictive Agriculture, systemic Healthcare assessments, and intelligent Traffic routing.</p>
+    <div className="min-h-screen bg-[#f8fafc] font-sans text-slate-800 pb-12">
+      {/* CORTEX-OS Header */}
+      <header className="bg-gradient-to-br from-[#1e293b] to-[#0f172a] text-white py-6 px-6 shadow-xl relative overflow-hidden border-b border-emerald-500/20">
+        <div className="absolute top-0 right-0 w-64 h-64 bg-emerald-500/10 rounded-full blur-3xl -mr-32 -mt-32"></div>
+        <div className="max-w-6xl mx-auto flex justify-between items-center z-10 relative">
+            <div className="flex items-center gap-3">
+                <div className="bg-emerald-500 p-2 rounded-lg shadow-lg shadow-emerald-500/20">
+                    <Activity size={24} className="text-white"/>
+                </div>
+                <div>
+                    <h1 className="text-2xl font-bold tracking-tighter">CORTEX<span className="text-emerald-500">-OS</span></h1>
+                    <p className="text-[10px] uppercase tracking-widest text-emerald-500/70 font-bold">Hospital Intelligence System</p>
+                </div>
+            </div>
+            <div className="flex items-center gap-4">
+                <div className="flex items-center gap-2 bg-slate-800 px-3 py-1.5 rounded-xl border border-slate-700">
+                    <UserIcon size={14} className="text-emerald-400"/>
+                    <span className="text-xs font-semibold">{user?.name}</span>
+                </div>
+                <button 
+                    onClick={handleLogout}
+                    className="p-2 hover:bg-red-500/10 rounded-xl transition-colors text-slate-400 hover:text-red-500"
+                    title="Logout"
+                >
+                    <LogOut size={18} />
+                </button>
+            </div>
+        </div>
       </header>
 
-      <main className="max-w-6xl mx-auto mt-8 px-4 flex flex-col md:flex-row gap-6">
+      <main className="max-w-6xl mx-auto mt-8 px-4 flex flex-col lg:flex-row gap-6">
         
-        {/* Main Interface */}
         <div className="flex-1 flex flex-col gap-6">
           
-          {/* Global Orchestrator Input */}
-          <div className="bg-white rounded-2xl shadow-sm border border-slate-200 p-6">
-            <h2 className="text-lg font-semibold text-slate-800 mb-4 flex items-center gap-2"><Activity size={20} className="text-emerald-600"/> Agent Orchestrator Input</h2>
+          {/* AI Orchestrator Input */}
+          <div className="bg-white rounded-3xl shadow-sm border border-slate-200 p-8">
+            <h2 className="text-sm font-bold text-slate-400 uppercase tracking-wider mb-6 flex items-center gap-2">
+                <Search size={16} /> Patient Support Assistant
+            </h2>
             <form onSubmit={handleQuerySubmit} className="flex gap-3">
               <div className="relative flex-1">
-                <Search className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400" size={18} />
                 <input 
                   type="text" 
                   value={query}
                   onChange={(e) => setQuery(e.target.value)}
-                  placeholder="Ask a cross-domain question (e.g. 'I have a fever, how is the traffic to the hospital?')" 
-                  className="w-full pl-11 pr-4 py-3 bg-slate-50 border border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-emerald-500/50 focus:border-emerald-500 transition-all text-sm"
+                  placeholder="Describe symptoms or request hospital routing..." 
+                  className="w-full px-6 py-4 bg-slate-50 border border-slate-200 rounded-2xl focus:outline-none focus:ring-2 focus:ring-emerald-500/20 focus:border-emerald-500 transition-all text-sm font-medium"
                   disabled={isProcessing}
                 />
               </div>
               <button 
                 type="submit" 
                 disabled={isProcessing}
-                className="bg-emerald-600 hover:bg-emerald-700 disabled:opacity-70 disabled:cursor-not-allowed text-white px-6 py-3 rounded-xl font-medium flex items-center gap-2 transition-transform transform hover:-translate-y-0.5 active:translate-y-0 shadow-md shadow-emerald-600/20"
+                className="bg-[#0f172a] hover:bg-emerald-600 disabled:opacity-70 disabled:cursor-not-allowed text-white px-8 py-4 rounded-2xl font-bold flex items-center gap-2 transition-all shadow-lg"
               >
                 {isProcessing ? <RefreshCw className="animate-spin" size={18} /> : <Send size={18} />}
-                {isProcessing ? 'Processing...' : 'Execute'}
+                {isProcessing ? 'Analyzing...' : 'Execute'}
               </button>
             </form>
 
             {summary && (
-              <motion.div initial={{ opacity: 0, y: 5 }} animate={{ opacity: 1, y: 0 }} className="mt-5 p-4 bg-emerald-50 text-emerald-900 rounded-xl border border-emerald-200 text-sm font-medium">
-                <span className="block text-emerald-700 font-bold mb-1 text-xs uppercase tracking-wider">Unified System Response</span>
-                {summary}
+              <motion.div initial={{ opacity: 0, scale: 0.95 }} animate={{ opacity: 1, scale: 1 }} className="mt-8 p-6 bg-emerald-50/50 text-emerald-900 rounded-2xl border border-emerald-100">
+                <div className="flex items-center gap-2 mb-2">
+                    <div className="w-2 h-2 bg-emerald-500 rounded-full animate-pulse"></div>
+                    <span className="text-xs font-bold text-emerald-700 uppercase tracking-tighter">Clinical Recommendation</span>
+                </div>
+                <p className="text-sm leading-relaxed">{summary}</p>
               </motion.div>
             )}
           </div>
 
-          {/* Navigation Tabs */}
-          <div className="flex bg-slate-200/50 p-1 rounded-2xl border border-slate-200/60 overflow-hidden">
+          {/* Core Modules Nav */}
+          <div className="flex bg-slate-100 p-1.5 rounded-2xl border border-slate-200">
             {[
-              { id: 'agriculture', icon: Leaf, label: 'Agriculture' },
-              { id: 'healthcare', icon: Stethoscope, label: 'Healthcare' },
-              { id: 'traffic', icon: Navigation, label: 'Traffic' }
+              { id: 'healthcare', icon: Stethoscope, label: 'Analysis' },
+              { id: 'bookings', icon: Calendar, label: 'Bookings' },
+              { id: 'traffic', icon: Navigation, label: 'Logistics' }
             ].map(tab => (
               <button
                 key={tab.id}
                 onClick={() => setActiveTab(tab.id)}
-                className={`flex-1 py-3 px-4 rounded-xl text-sm font-semibold flex items-center justify-center gap-2 transition-all ${activeTab === tab.id ? 'bg-white text-emerald-700 shadow-sm border border-slate-200/50' : 'text-slate-500 hover:text-slate-700 hover:bg-slate-200/80'}`}
+                className={`flex-1 py-3 px-4 rounded-xl text-xs font-bold flex items-center justify-center gap-2 transition-all ${activeTab === tab.id ? 'bg-white text-emerald-600 shadow-sm border border-slate-200' : 'text-slate-500 hover:text-slate-800'}`}
               >
-                <tab.icon size={16} />
+                <tab.icon size={14} />
                 {tab.label}
               </button>
             ))}
           </div>
 
-          {/* Tab Content Panels */}
           <div className="min-h-[400px]">
             <AnimatePresence mode="wait">
-              {activeTab === 'agriculture' && (
-                <motion.div key="agri" initial={{ opacity: 0, x: -10 }} animate={{ opacity: 1, x: 0 }} exit={{ opacity: 0, x: 10 }} className="grid md:grid-cols-2 gap-5">
-                  <div className="bg-white rounded-2xl shadow-sm border border-slate-200 p-6">
-                     <h3 className="text-base font-bold mb-4 flex items-center gap-2"><Leaf size={18} className="text-emerald-500"/> Soil & Crop Intelligence (MCP)</h3>
-                     <div className="space-y-4">
-                        <div className="p-4 bg-slate-50 rounded-xl border border-slate-100">
-                          <p className="text-xs text-slate-400 uppercase font-bold tracking-wider mb-1">Measured pH</p>
-                          <p className="text-xl font-bold text-slate-700">{agriResult.ph}</p>
+              {activeTab === 'bookings' && (
+                <motion.div key="bookings" initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -10 }} className="space-y-6">
+                    <div className="bg-white rounded-3xl shadow-sm border border-slate-200 p-8">
+                        <h3 className="text-lg font-bold mb-6 flex items-center gap-2 text-slate-800"><Calendar size={20} className="text-emerald-500"/> Real-time Booking</h3>
+                        <div className="grid md:grid-cols-2 gap-4">
+                            <div className="p-4 bg-slate-50 rounded-2xl border border-slate-200 border-dashed hover:border-emerald-300 transition-colors cursor-pointer group">
+                                <div className="flex justify-between items-start mb-4">
+                                    <div className="bg-white p-2 rounded-xl shadow-sm"><Clock size={16} className="text-emerald-500"/></div>
+                                    <span className="text-[10px] font-bold bg-emerald-100 text-emerald-700 px-2 py-1 rounded-full uppercase">Available</span>
+                                </div>
+                                <h4 className="font-bold text-slate-800">General Consultation</h4>
+                                <p className="text-xs text-slate-500 mt-1">Next available: Today, 2:30 PM</p>
+                                <button 
+                                    onClick={() => handleBook('General Consultation')}
+                                    className="mt-4 w-full py-2 bg-emerald-600 group-hover:bg-emerald-700 text-white text-xs font-bold rounded-lg transition-colors"
+                                >
+                                    Book Now
+                                </button>
+                            </div>
+                            <div className="p-4 bg-slate-50 rounded-2xl border border-slate-200 border-dashed hover:border-blue-300 transition-colors cursor-pointer group">
+                                <div className="flex justify-between items-start mb-4">
+                                    <div className="bg-white p-2 rounded-xl shadow-sm"><Stethoscope size={16} className="text-blue-500"/></div>
+                                    <span className="text-[10px] font-bold bg-blue-100 text-blue-700 px-2 py-1 rounded-full uppercase">Specialist</span>
+                                </div>
+                                <h4 className="font-bold text-slate-800">Cardiology Dept.</h4>
+                                <p className="text-xs text-slate-500 mt-1">Next available: Tomorrow, 9:00 AM</p>
+                                <button 
+                                    onClick={() => handleBook('Cardiology')}
+                                    className="mt-4 w-full py-2 bg-blue-600 group-hover:bg-blue-700 text-white text-xs font-bold rounded-lg transition-colors"
+                                >
+                                    Book Now
+                                </button>
+                            </div>
                         </div>
-                        <div className="p-4 bg-slate-50 rounded-xl border border-slate-100">
-                          <p className="text-xs text-slate-400 uppercase font-bold tracking-wider mb-1">Conditions</p>
-                          <p className="text-sm font-medium text-slate-700">{agriResult.condition}</p>
-                        </div>
-                        <div className="p-4 bg-emerald-50 rounded-xl border border-emerald-100 border-dashed">
-                          <p className="text-xs text-emerald-600 uppercase font-bold tracking-wider mb-1">Agent Recommendation</p>
-                          <p className="text-sm text-emerald-900 font-medium">{agriResult.recommendation}</p>
-                        </div>
-                     </div>
-                  </div>
-                  <div className="bg-white rounded-2xl shadow-sm border border-slate-200 p-6 flex flex-col items-center justify-center min-h-[250px] bg-gradient-to-b from-white to-slate-50/50">
-                    <Cloud className="text-slate-300 mb-3" size={48} />
-                    <p className="text-slate-500 text-sm text-center max-w-[200px]">Weather insights are integrated dynamically into orchestrator decisions.</p>
-                  </div>
+
+                        {/* Booking List */}
+                        {bookings.length > 0 && (
+                            <div className="mt-8 border-t border-slate-100 pt-8">
+                                <h4 className="text-sm font-bold text-slate-400 uppercase tracking-wider mb-4">Your Recent Appointments</h4>
+                                <div className="space-y-3">
+                                    {bookings.slice(0, 3).map((b, i) => (
+                                        <div key={i} className="flex items-center justify-between p-4 bg-slate-50 rounded-2xl border border-slate-200">
+                                            <div className="flex items-center gap-4">
+                                                <div className="w-10 h-10 bg-white rounded-xl shadow-sm flex items-center justify-center text-emerald-500 font-bold">
+                                                    {b.department[0]}
+                                                </div>
+                                                <div>
+                                                    <p className="font-bold text-sm text-slate-800">{b.department}</p>
+                                                    <p className="text-[10px] text-slate-500">{new Date(b.appointmentDate).toLocaleDateString()} @ {b.timeSlot}</p>
+                                                </div>
+                                            </div>
+                                            <span className="text-[8px] font-black uppercase px-2 py-1 bg-emerald-100 text-emerald-700 rounded-lg">{b.status}</span>
+                                        </div>
+                                    ))}
+                                </div>
+                            </div>
+                        )}
+                    </div>
                 </motion.div>
               )}
 
               {activeTab === 'healthcare' && (
-                <motion.div key="health" initial={{ opacity: 0, x: -10 }} animate={{ opacity: 1, x: 0 }} exit={{ opacity: 0, x: 10 }} className="bg-white rounded-2xl shadow-sm border border-slate-200 p-6">
-                  <h3 className="text-base font-bold mb-4 flex items-center gap-2"><Stethoscope size={18} className="text-blue-500"/> Healthcare Agent Analysis</h3>
-                  <div className="min-h-[200px] p-5 bg-slate-50 border border-slate-200 rounded-xl whitespace-pre-wrap font-mono text-sm text-slate-700">
-                    {healthResult ? healthResult : "Waiting for health-related query execution from standard input..."}
+                <motion.div key="health" initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -10 }} className="bg-white rounded-3xl shadow-sm border border-slate-200 p-8">
+                  <h3 className="text-lg font-bold mb-6 flex items-center gap-2 text-slate-800"><Stethoscope size={20} className="text-blue-500"/> Clinical Analysis</h3>
+                  <div className="min-h-[250px] p-6 bg-[#0f172a] text-emerald-400 rounded-2xl font-mono text-xs leading-relaxed overflow-hidden relative">
+                    <div className="absolute top-0 right-0 w-32 h-32 bg-emerald-500/5 blur-3xl rounded-full"></div>
+                    {healthResult ? (
+                        <div className="relative z-10 animate-in fade-in slide-in-from-bottom-2 duration-700">
+                             <div className="text-emerald-500 mb-4 opacity-50">// CORTEX-OS SYSTEM DIAGNOSTIC OUTPUT</div>
+                             {healthResult}
+                        </div>
+                    ) : (
+                        <div className="opacity-30 flex flex-col items-center justify-center h-full gap-4">
+                            <Activity size={40} className="animate-pulse"/>
+                            <span>Waiting for patient query injection...</span>
+                        </div>
+                    )}
                   </div>
                 </motion.div>
               )}
 
               {activeTab === 'traffic' && (
-                <motion.div key="traffic" initial={{ opacity: 0, x: -10 }} animate={{ opacity: 1, x: 0 }} exit={{ opacity: 0, x: 10 }} className="grid md:grid-cols-2 gap-5">
-                  <div className="bg-white rounded-2xl shadow-sm border border-slate-200 p-6">
-                     <h3 className="text-base font-bold mb-4 flex items-center gap-2"><Navigation size={18} className="text-orange-500"/> Route Optimization</h3>
-                     <div className="p-4 bg-orange-50 rounded-xl border-l-4 border-orange-500 mb-4">
-                        <p className="text-xs text-orange-700 uppercase font-bold tracking-wider mb-1">Congestion Level</p>
-                        <p className="text-lg font-bold text-orange-900">{trafficResult.congestion}</p>
-                     </div>
-                     <div className="p-4 bg-slate-50 rounded-xl border border-slate-200">
-                        <p className="text-xs text-slate-500 uppercase font-bold tracking-wider mb-1">Suggested Route</p>
-                        <p className="text-sm font-medium text-slate-800">{trafficResult.bestRoute}</p>
-                     </div>
+                <motion.div key="traffic" initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -10 }} className="bg-white rounded-3xl shadow-sm border border-slate-200 p-8">
+                  <h3 className="text-lg font-bold mb-6 flex items-center gap-2 text-slate-800"><Navigation size={20} className="text-orange-500"/> Emergency Logistics</h3>
+                  <div className="space-y-4">
+                      <div className="p-6 bg-orange-50/50 rounded-2xl border border-orange-100 flex items-center justify-between">
+                        <div>
+                            <p className="text-[10px] font-bold text-orange-600 uppercase tracking-widest mb-1">Route Status</p>
+                            <p className="text-xl font-black text-orange-950">{trafficResult.congestion}</p>
+                        </div>
+                        <MapPin size={32} className="text-orange-500 opacity-20" />
+                      </div>
+                      <div className="p-6 bg-slate-50 rounded-2xl border border-slate-200 border-dashed">
+                        <p className="text-[10px] font-bold text-slate-500 uppercase tracking-widest mb-2">Recommended Hospital Path</p>
+                        <p className="text-sm font-bold text-slate-800 leading-relaxed italic">"{trafficResult.bestRoute}"</p>
+                      </div>
                   </div>
                 </motion.div>
               )}
@@ -209,48 +331,65 @@ function App() {
           </div>
         </div>
 
-        {/* Sidebar - Agent Activity Logs */}
-        <div className="w-full md:w-80 border border-slate-200 bg-white shadow-sm rounded-2xl overflow-hidden flex flex-col h-[600px] sticky top-6">
-          <div className="bg-slate-50 border-b border-slate-200 p-4">
-            <h3 className="font-bold text-slate-800 flex items-center gap-2 text-sm uppercase tracking-wider">
-              <span className="relative flex h-2 w-2">
-                <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75"></span>
-                <span className="relative inline-flex rounded-full h-2 w-2 bg-emerald-500"></span>
-              </span>
-              Agent Timeline
+        {/* CORTEX Sidebar */}
+        <div className="w-full lg:w-80 border border-slate-200 bg-white shadow-xl rounded-3xl overflow-hidden flex flex-col h-[600px] sticky top-6">
+          <div className="bg-[#0f172a] text-white p-6">
+            <h3 className="font-bold flex items-center gap-2 text-xs uppercase tracking-[0.2em] text-emerald-500">
+              <span className="flex h-2 w-2 rounded-full bg-emerald-500 animate-pulse"></span>
+              Live Node Logs
             </h3>
-            <p className="text-xs text-slate-500 mt-1">Live execution logs via Socket.io</p>
+            <p className="text-[10px] text-slate-500 mt-1">CORTEX-OS v1.0.4 - Monitoring Thread</p>
           </div>
           
-          <div className="flex-1 overflow-y-auto p-4 flex flex-col gap-3 font-mono text-xs">
+          <div className="flex-1 overflow-y-auto p-6 flex flex-col gap-4 font-mono text-[10px]">
             {agentLogs.length === 0 && (
-              <div className="text-slate-400 italic text-center mt-10">
-                Idling. Waiting for orchestrator commands.
+              <div className="flex flex-col items-center justify-center h-full opacity-20 italic">
+                <RefreshCw size={24} className="mb-2 animate-spin-slow"/>
+                <span>System Interlink Idle</span>
               </div>
             )}
             {agentLogs.map((log, idx) => (
               <motion.div 
-                initial={{ opacity: 0, y: 10 }}
-                animate={{ opacity: 1, y: 0 }}
+                initial={{ opacity: 0, x: 20 }}
+                animate={{ opacity: 1, x: 0 }}
                 key={idx} 
-                className={`p-3 rounded-lg border ${log.status === 'error' ? 'bg-red-50 border-red-100 text-red-800' : log.agent === 'System' || log.agent === 'Planner Agent' || log.agent === 'Response Agent' ? 'bg-slate-50 border-slate-200 text-slate-700' : 'bg-emerald-50 border-emerald-100 text-emerald-800'}`}
+                className={`p-3 rounded-xl border border-dashed transition-all ${log.status === 'error' ? 'bg-red-50 border-red-200 text-red-900' : 'bg-slate-50 border-slate-200 text-slate-600'}`}
               >
-                <div className="font-bold border-b border-black/5 pb-1 mb-1.5 flex justify-between">
-                  <span>[{log.agent}]</span>
-                  <span className="opacity-50">{new Date(log.timestamp).toLocaleTimeString([], {hour: '2-digit', minute:'2-digit', second:'2-digit'})}</span>
+                <div className="font-bold border-b border-black/5 pb-2 mb-2 flex justify-between uppercase text-[8px] opacity-60">
+                  <span className={log.agent === 'Planner Agent' ? 'text-blue-600' : 'text-emerald-600'}>[{log.agent}]</span>
+                  <span>{new Date(log.timestamp).toLocaleTimeString()}</span>
                 </div>
-                <div className="flex items-start gap-2">
-                  {log.status === 'thinking' && <RefreshCw className="animate-spin shrink-0 mt-0.5" size={12} />}
-                  <span className={`${log.status === 'thinking' ? 'opacity-80 italic' : ''}`}>{log.message}</span>
+                <div className="flex items-start gap-2 leading-tight">
+                  <span className={log.status === 'thinking' ? 'animate-pulse' : ''}>{log.message}</span>
                 </div>
               </motion.div>
             ))}
             <div ref={logsEndRef} />
           </div>
         </div>
-
       </main>
     </div>
+  );
+}
+
+const ProtectedRoute = ({ children }) => {
+    const user = JSON.parse(localStorage.getItem('user'));
+    if (!user) return <Navigate to="/login" replace />;
+    return children;
+};
+
+function App() {
+  return (
+    <Routes>
+      <Route path="/register" element={<Register />} />
+      <Route path="/login" element={<Login />} />
+      <Route path="/verify-email" element={<VerifyEmail />} />
+      <Route path="/" element={
+        <ProtectedRoute>
+          <Dashboard />
+        </ProtectedRoute>
+      } />
+    </Routes>
   );
 }
 

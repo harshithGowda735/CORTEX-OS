@@ -1,28 +1,23 @@
 const { planExecution } = require('../agents/plannerAgent');
 const { generateResponse } = require('../agents/responseAgent');
-const { analyzeAgriculture } = require('../agents/domain/agriAgent');
 const { analyzeHealth } = require('../agents/domain/healthAgent');
 const { analyzeTraffic } = require('../agents/domain/trafficAgent');
 const memoryService = require('../memory/memoryService');
 const { emitAgentActivity } = require('../socket/socketHandler');
 
 const processQuery = async (query, userId = 'default_user', io) => {
-  console.log(`\n🧠 Processing query for user ${userId}: "${query}"`);
+  console.log(`\n🧠 [CORTEX-OS] Processing query for user ${userId}: "${query}"`);
   
   // 1. Get Memory/Context
   const memory = memoryService.getMemory(userId);
   
-  emitAgentActivity(userId, { agent: 'System', message: 'Orchestrating multi-agent workflow...', status: 'info' });
+  emitAgentActivity(userId, { agent: 'CORTEX-OS', message: 'Orchestrating hospital intelligence workflow...', status: 'info', timestamp: new Date() });
 
   // 2. Planning Phase
   const domainsToTrigger = await planExecution(query, memory, userId);
   
   // 3. Execution Phase (Run agents in parallel)
   const agentTasks = [];
-  
-  if (domainsToTrigger.includes('agriculture')) {
-    agentTasks.push(analyzeAgriculture(query, userId));
-  }
   
   if (domainsToTrigger.includes('healthcare')) {
     agentTasks.push(analyzeHealth(query, userId));

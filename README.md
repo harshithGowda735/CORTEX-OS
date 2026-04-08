@@ -1,61 +1,66 @@
-# AgriHealthTraffic – MCP Multi-Agent Decision Platform
+# CORTEX-OS – Hospital Intelligence System
 
-**AgriHealthTraffic** is a premium, full-stack multi-agent system built for the Model Context Protocol (MCP) era. It integrates intelligence across **Agriculture**, **Healthcare**, and **Traffic** domains, using an autonomous orchestrator to coordinate complex decision-making through distributed agents.
+**CORTEX-OS** is a premium, full-stack hospital intelligence system built for the Model Context Protocol (MCP) era. It integrates medical diagnostics, real-time appointment booking, and emergency logistics through an autonomous multi-agent orchestrator.
 
-## 🚀 Vision: Cross-Domain Intelligence
-Most AI systems act as siloed chatbots. AgriHealthTraffic demonstrates a **Multi-Agent Orchestration** approach where:
-- A **Planner Agent** breaks down a single user query into sub-tasks.
-- **Domain-Specific Agents** (Agri, Health, Traffic) process data in parallel within a shared context.
-- A **Response Agent** synthesizes multi-layered data into a definitive, actionable decision.
+## 🚀 Vision: Clinical Intelligence & Logistics
+Most medical systems are static data entries. CORTEX-OS demonstrates a **Multi-Agent Orchestration** approach where:
+- A **Planner Agent** breaks down patient symptoms and logistical needs.
+- **Clinical Agents** (Healthcare, Logistics) process diagnostics and routing in parallel.
+- **Booking Core** manages real-time appointments with automated scheduling.
+- A **Response Agent** synthesizes clinical data into definitive medical insights.
 
 ## 🌟 Key Features
-- **MCP Orchestrator Core**: A central node that parses intent and manages agent lifecycles.
-- **Real-Time Agent Activity**: Watch the orchestrator "think" in real-time through the live Agent Timeline (powered by Socket.io).
-- **Emerald Design Language**: A clean, premium dashboard with smooth Framer Motion animations.
-- **Shared Memory System**: Maintains context across interactions for deep, multi-turn reasoning.
+- **Healthcare Orchestrator**: Central node parsing patient intent and clinical urgency.
+- **Real-time Booking**: Full-stack hospital appointment system with instant confirmation.
+- **Emergency Logistics**: Intelligent routing optimized for hospital arrival time.
+- **CORTEX Node Timeline**: Live execution logs via Socket.io.
+- **Security-First Auth**: JWT-based session management with Resend OTP verification.
 
 ## 🛠 Tech Stack
-- **Frontend**: React (Vite) + Tailwind CSS + Framer Motion
-- **Backend**: Node.js (Express) + Socket.io
-- **Architecture**: Model Context Protocol (MCP) inspired Multi-Agent System
+- **Frontend**: React (Vite) + Lucide + Framer Motion
+- **Backend**: Node.js (Express) + MongoDB Atlas + Socket.io
+- **Email**: Resend API
+- **Architecture**: Multi-Agent Decision Core
 
 ## 📂 Project Structure
 ```text
-agri-health-traffic-mcp/
-├── backend/
+CORTEX-OS/
+├── server/
+│   ├── config/ (DB, Email, Auth)
+│   ├── controllers/ (User, Booking)
 │   ├── core/
-│   │   ├── agents/ (Domain & System Agents)
+│   │   ├── agents/ (Clinical & System Agents)
 │   │   ├── orchestrator/ (The Brain)
-│   │   ├── memory/ (Context Storage)
-│   │   └── socket/ (Real-time Handler)
-│   └── server.js
+│   │   └── socket/ (Real-time Timeline)
+│   ├── models/ (User, Booking)
+│   └── routes/ (Auth, Booking)
 └── frontend/
     ├── src/
     │   ├── components/
-    │   ├── pages/
     │   └── App.jsx
 ```
 
-## 🚥 Live Demo Flow
-1. **User Input**: "I have chest pain and need to get to the City Hospital, how's the traffic?"
-2. **Planner**: Detects both *Health* and *Traffic* requirements.
+## 🚥 Clinical Flow Demo
+1. **Patient Input**: "I have chest pain and need to get to the City Hospital, how's the traffic?"
+2. **Planner**: Identifies high-risk clinical symptoms and logistical priority.
 3. **Execution**:
-   - `Healthcare Agent`: Analyzes symptoms and identifies high risk.
+   - `Healthcare Agent`: Analyzes risk (Cardiac) and advises immediate arrival.
    - `Traffic Agent`: Finds the fastest emergency route avoiding congestion.
-4. **Synthesis**: `Response Agent` combines findings: "Possible Cardiac risk detected. Primary route via Northern Expressway is clear. ETA: 12 minutes."
+4. **Synthesis**: `Response Agent` combines findings: "CORTEX-OS Assessment: CRITICAL status detected. Logistical analysis recommends Northern Expressway. ETA: 8 minutes."
 
 ## 🏗 Setup & Installation
 
 ### Backend
-1. `cd backend`
+1. `cd server`
 2. `npm install`
-3. `npm start` (Runs on port 5000)
+3. Create `.env` (MONGODB_URI, RESEND_API_KEY, JWT_SECRET)
+4. `npm run dev`
 
 ### Frontend
 1. `cd frontend`
 2. `npm install`
-3. `npm run dev` (Runs on port 5173)
+3. `npm run dev`
 
 ---
 
-Built for the future of agentic workflows. 🌾🏥🚦
+Built for the future of clinical workflows. 🏥🚦🧬
