@@ -2,6 +2,9 @@ const { planExecution } = require('../agents/plannerAgent');
 const { generateResponse } = require('../agents/responseAgent');
 const { analyzeHealth } = require('../agents/domain/healthAgent');
 const { analyzeTraffic } = require('../agents/domain/trafficAgent');
+const { monitorVitals } = require('../agents/domain/vitalsAgent');
+const { analyzeBilling } = require('../agents/domain/payflowAgent');
+const { manageOperations } = require('../agents/domain/operationsAgent');
 const memoryService = require('../memory/memoryService');
 const { emitAgentActivity } = require('../socket/socketHandler');
 
@@ -19,13 +22,11 @@ const processQuery = async (query, userId = 'default_user', io) => {
   // 3. Execution Phase (Run agents in parallel)
   const agentTasks = [];
   
-  if (domainsToTrigger.includes('healthcare')) {
-    agentTasks.push(analyzeHealth(query, userId));
-  }
-  
-  if (domainsToTrigger.includes('traffic')) {
-    agentTasks.push(analyzeTraffic(query, userId));
-  }
+  if (domainsToTrigger.includes('healthcare')) agentTasks.push(analyzeHealth(query, userId));
+  if (domainsToTrigger.includes('traffic')) agentTasks.push(analyzeTraffic(query, userId));
+  if (domainsToTrigger.includes('vitals')) agentTasks.push(monitorVitals(query, userId));
+  if (domainsToTrigger.includes('billing')) agentTasks.push(analyzeBilling(query, userId));
+  if (domainsToTrigger.includes('operations')) agentTasks.push(manageOperations(query, userId));
 
   const results = await Promise.all(agentTasks);
   

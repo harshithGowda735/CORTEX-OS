@@ -1,66 +1,57 @@
-# CORTEX-OS – Hospital Intelligence System
+# CORTEX-OS – Smart AI Hospital Management System (MCP)
 
-**CORTEX-OS** is a premium, full-stack hospital intelligence system built for the Model Context Protocol (MCP) era. It integrates medical diagnostics, real-time appointment booking, and emergency logistics through an autonomous multi-agent orchestrator.
+**CORTEX-OS** is a premium, full-stack hospital intelligence system built for the Model Context Protocol (MCP) era. It unifies clinical diagnostics, real-time health monitoring, automated staffing, and intelligent billing (PayFlow AI) through a synchronized multi-agent orchestrator.
 
-## 🚀 Vision: Clinical Intelligence & Logistics
-Most medical systems are static data entries. CORTEX-OS demonstrates a **Multi-Agent Orchestration** approach where:
-- A **Planner Agent** breaks down patient symptoms and logistical needs.
-- **Clinical Agents** (Healthcare, Logistics) process diagnostics and routing in parallel.
-- **Booking Core** manages real-time appointments with automated scheduling.
-- A **Response Agent** synthesizes clinical data into definitive medical insights.
+## 🚀 Vision: Autonomous Hospital Intelligence
+CORTEX-OS moves beyond static management to active orchestration. Using the **Model Context Protocol (MCP)**, the system coordinates specialized AI agents to manage every facet of a hospital's operation:
+- **Planner Agent**: Deconstructs complex clinical/logistical intents.
+- **Healthcare Agent**: Performs deep-dive symptom analysis and risk assessment.
+- **Vitals Agent**: Monitors real-time biometric feeds (Heart Rate, SpO2, BP) for high-urgency alerts.
+- **PayFlow AI Agent**: Automates billing, predicts treatment costs, and detects financial anomalies.
+- **Operations Agent**: Optimizes doctor availability, bed occupancy, and duty shifts.
+- **Traffic Agent**: Finds fastest emergency routes for incoming patients.
 
 ## 🌟 Key Features
-- **Healthcare Orchestrator**: Central node parsing patient intent and clinical urgency.
-- **Real-time Booking**: Full-stack hospital appointment system with instant confirmation.
-- **Emergency Logistics**: Intelligent routing optimized for hospital arrival time.
-- **CORTEX Node Timeline**: Live execution logs via Socket.io.
-- **Security-First Auth**: JWT-based session management with Resend OTP verification.
+- **Smart Health Monitoring**: Real-time biometric streaming with AI-generated urgency levels (Normal/Critical/Emergency).
+- **PayFlow AI Billing**: Automated real-time billing with predictive cost visualizations and insurance optimization.
+- **Staff Operations**: Intelligent doctor assignment based on specialization and current occupancy.
+- **Admission/Discharge AI**: Automated admission date tracking and predictive discharge forensics.
+- **CORTEX Node Timeline**: Live multi-agent execution thread powered by Socket.io.
+- **Zero-Config Dev Mode**: Bypasses login requirements for rapid development and testing.
 
 ## 🛠 Tech Stack
-- **Frontend**: React (Vite) + Lucide + Framer Motion
+- **Frontend**: React (Vite) + Lucide + Framer Motion + Tailwind CSS
 - **Backend**: Node.js (Express) + MongoDB Atlas + Socket.io
-- **Email**: Resend API
-- **Architecture**: Multi-Agent Decision Core
+- **AI Core**: Multi-Agent Decision Orchestration (MCP Architecture)
 
 ## 📂 Project Structure
 ```text
 CORTEX-OS/
 ├── server/
-│   ├── config/ (DB, Email, Auth)
-│   ├── controllers/ (User, Booking)
 │   ├── core/
-│   │   ├── agents/ (Clinical & System Agents)
-│   │   ├── orchestrator/ (The Brain)
-│   │   └── socket/ (Real-time Timeline)
-│   ├── models/ (User, Booking)
-│   └── routes/ (Auth, Booking)
+│   │   ├── agents/ (Specialized Domain Agents)
+│   │   └── orchestrator/ (The Decision Brain)
+│   ├── controllers/ (Hospital, Billing, User)
+│   ├── models/ (Doctor, MedicalProfile, Billing, User)
+│   └── routes/ (Public & Protected routes)
 └── frontend/
     ├── src/
-    │   ├── components/
-    │   └── App.jsx
+    │   └── App.jsx (Unified MCP Dashboard)
 ```
 
-## 🚥 Clinical Flow Demo
-1. **Patient Input**: "I have chest pain and need to get to the City Hospital, how's the traffic?"
-2. **Planner**: Identifies high-risk clinical symptoms and logistical priority.
-3. **Execution**:
-   - `Healthcare Agent`: Analyzes risk (Cardiac) and advises immediate arrival.
-   - `Traffic Agent`: Finds the fastest emergency route avoiding congestion.
-4. **Synthesis**: `Response Agent` combines findings: "CORTEX-OS Assessment: CRITICAL status detected. Logistical analysis recommends Northern Expressway. ETA: 8 minutes."
+## 🚥 Sample Orchestration Flow
+1. **Input**: "Check my current bill and suggest a cardiologist for my chest pain."
+2. **Planner Agent**: Identifies `Healthcare`, `Operations`, and `Billing` requirements.
+3. **Parallel Execution**:
+   - `PayFlow Agent`: Pulls current consultation and lab charges.
+   - `Healthcare Agent`: Analyzes risk for chest pain (Cardiac).
+   - `Ops Agent`: Finds available cardiologists and optimizes the wait time.
+4. **Synthesis**: `Response Agent` combines findings: "CORTEX-OS Assessment: High-risk cardiac symptom detected. Dr. Sarah Chen is available in 15 mins. Current PayFlow total: ₹4,500."
 
 ## 🏗 Setup & Installation
-
-### Backend
-1. `cd server`
-2. `npm install`
-3. Create `.env` (MONGODB_URI, RESEND_API_KEY, JWT_SECRET)
-4. `npm run dev`
-
-### Frontend
-1. `cd frontend`
-2. `npm install`
-3. `npm run dev`
+1. `cd server` -> `npm install` -> `npm run dev`
+2. `cd frontend` -> `npm install` -> `npm run dev`
 
 ---
 
-Built for the future of clinical workflows. 🏥🚦🧬
+Built for the future of intelligent clinical workflows. 🏥🚦🧬

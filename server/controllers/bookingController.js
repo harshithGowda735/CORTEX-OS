@@ -3,7 +3,7 @@ const BookingModel = require('../models/BookingModel');
 const createBooking = async (req, res) => {
     try {
         const { department, appointmentDate, timeSlot, reason } = req.body;
-        const userId = req.userId; // Provided by Auth middleware
+        const userId = req.userId || '69d63cad259998ad67ae6286'; // Fallback for dev mode
 
         if (!department || !appointmentDate || !timeSlot) {
             return res.status(400).json({

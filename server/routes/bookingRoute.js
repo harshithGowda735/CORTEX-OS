@@ -4,7 +4,7 @@ const auth = require('../middleware/Auth');
 
 const bookingRouter = express.Router();
 
-bookingRouter.post('/create', auth, createBooking);
-bookingRouter.get('/user-bookings', auth, getUserBookings);
+bookingRouter.post('/create', createBooking);
+bookingRouter.get('/user-bookings', getUserBookings);
 
 module.exports = bookingRouter;
