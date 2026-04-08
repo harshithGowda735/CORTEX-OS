@@ -1,31 +1,27 @@
 const { emitAgentActivity } = require('../../socket/socketHandler');
 
-const analyzeBilling = async (query, userId) => {
-  emitAgentActivity(userId, { agent: 'PayFlow Agent', message: 'Analyzing consultation records and resource utilization...', status: 'thinking' });
+const analyzeBilling = async (context) => {
+  const { query, userId } = context;
+  emitAgentActivity(userId, { agent: 'PayFlow Agent', message: 'Auditing current charges and predicting final bill...', status: 'thinking' });
   
   await new Promise(resolve => setTimeout(resolve, 1500));
 
   let response = {
-    domain: 'Billing',
-    totalEstimated: '₹4,500',
-    anomalies: 'None detected',
+    consultation: 500,
+    tests: 2000,
+    room: 3000,
+    total: 5500,
+    predicted: 15000,
     breakdown: [
       { item: 'Consultation Fee', cost: '₹500' },
-      { item: 'Diagnostic Panel', cost: '₹2,500' },
-      { item: 'In-patient Room (Est.)', cost: '₹1,500' }
+      { item: 'Diagnostic Tests', cost: '₹2,000' },
+      { item: 'Room Charges', cost: '₹3,000' }
     ],
-    savingsAdvice: 'Switching to preferred provider insurance could save 20%'
+    insuranceOptimization: 'Switching to preferred provider insurance could save 20%'
   };
 
-  const lowerQuery = query.toLowerCase();
-  
-  if (lowerQuery.includes('bill') || lowerQuery.includes('cost') || lowerQuery.includes('pay')) {
-    response.message = `Your current estimated total is ${response.totalEstimated}. I have analyzed your treatment path and no anomalies were found.`;
-  } else {
-    response.message = "Billing monitoring active. No critical anomalies detected in the current session.";
-  }
-
-  emitAgentActivity(userId, { agent: 'PayFlow Agent', message: 'Financial intelligence package ready.', status: 'done' });
+  emitAgentActivity(userId, { agent: 'PayFlow Agent', message: 'Billing analysis synchronized.', status: 'done' });
+  context.results.billing = response;
   return response;
 };
 

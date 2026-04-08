@@ -1,6 +1,7 @@
 const { emitAgentActivity } = require('../../socket/socketHandler');
 
-const analyzeHealth = async (query, userId) => {
+const analyzeHealth = async (context) => {
+  const { query, userId } = context;
   emitAgentActivity(userId, { agent: 'Healthcare Agent', message: 'Checking symptom patterns against medical database...', status: 'thinking' });
   
   await new Promise(resolve => setTimeout(resolve, 2000));
@@ -15,8 +16,9 @@ const analyzeHealth = async (query, userId) => {
   const lowerQuery = query.toLowerCase();
 
   if (lowerQuery.includes('pain') && lowerQuery.includes('chest')) {
-    response.assessment = "Acute discomfort detected in thoracic region.";
+    response.assessment = "Acute discomfort detected in thoracic region. High likelihood of myocardial distress.";
     response.riskLevel = 'High';
+    response.riskProbability = '82%';
     response.nextSteps = ["Emergency medical evaluation recommended", "Check vitals immediately", "Route to nearest Cardiac Care Unit"];
   } else if (lowerQuery.includes('fever') || lowerQuery.includes('cold') || lowerQuery.includes('cough')) {
     response.assessment = "Symptoms consistent with upper respiratory infection.";
@@ -29,6 +31,7 @@ const analyzeHealth = async (query, userId) => {
   }
 
   emitAgentActivity(userId, { agent: 'Healthcare Agent', message: 'Health assessment ready.', status: 'done' });
+  context.results.healthcare = response;
   return response;
 };
 

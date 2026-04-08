@@ -1,12 +1,19 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { io } from 'socket.io-client';
-import { Navigation, Activity, Stethoscope, Search, RefreshCw, Send, LogOut, User as UserIcon, Calendar, Clock, MapPin, CreditCard, Users, HeartPulse, TrendingUp, ShieldAlert, BadgeCheck } from 'lucide-react';
+import { Navigation, Activity, Stethoscope, Search, RefreshCw, Send, LogOut, User as UserIcon, Calendar, Clock, MapPin, CreditCard, Users, HeartPulse, TrendingUp, ShieldAlert, BadgeCheck, AlertCircle } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Routes, Route, useNavigate, Navigate } from 'react-router-dom';
 import Register from './components/Auth/Register';
 import Login from './components/Auth/Login';
 import VerifyEmail from './components/Auth/VerifyEmail';
 import toast from 'react-hot-toast';
+
+// New Hospital Components
+import ClinicalAnalysisCard from './components/Hospital/ClinicalAnalysisCard';
+import VitalsCard from './components/Hospital/VitalsCard';
+import PayFlowCard from './components/Hospital/PayFlowCard';
+import TrafficCard from './components/Hospital/TrafficCard';
+import DoctorCard from './components/Hospital/DoctorCard';
 
 const SOCKET_URL = 'http://localhost:5000';
 
@@ -21,41 +28,32 @@ function Dashboard() {
   const navigate = useNavigate();
   
   // Data States
-  const [healthResult, setHealthResult] = useState('');
-  const [trafficResult, setTrafficResult] = useState({ congestion: '--', bestRoute: '--' });
+  const [healthResult, setHealthResult] = useState(null);
+  const [trafficResult, setTrafficResult] = useState(null);
   const [vitalsData, setVitalsData] = useState({ heartRate: 72, bp: '120/80', spo2: 98, temp: 98.6 });
   const [billingData, setBillingData] = useState({ total: 0, breakdown: [], predicted: 0 });
   const [summary, setSummary] = useState('');
-  const [bookings, setBookings] = useState([]);
+  const [isEmergency, setIsEmergency] = useState(false);
 
   useEffect(() => {
-    // Initialize Socket
     const newSocket = io(SOCKET_URL);
     setSocket(newSocket);
 
     newSocket.on('agent-activity', (data) => {
-      setAgentLogs(prev => [...prev, data]);
+      setAgentLogs(prev => [...prev, { ...data, timestamp: new Date() }]);
       scrollToBottom();
     });
 
-    if (user) {
-        fetchUserBookings();
-    }
-
-    // Simulate real-time vitals
-    const vitalsInterval = setInterval(() => {
-        setVitalsData(prev => ({
-            ...prev,
-            heartRate: 70 + Math.floor(Math.random() * 15),
-            spo2: 97 + Math.floor(Math.random() * 3)
-        }));
-    }, 5000);
-
     return () => {
         newSocket.disconnect();
-        clearInterval(vitalsInterval);
     };
   }, []);
+
+  const scrollToBottom = () => {
+    setTimeout(() => {
+      logsEndRef.current?.scrollIntoView({ behavior: 'smooth' });
+    }, 100);
+  };
 
   const handleQuerySubmit = async (e) => {
     e.preventDefault();
@@ -64,6 +62,7 @@ function Dashboard() {
     setIsProcessing(true);
     setAgentLogs([]);
     setSummary('');
+    setIsEmergency(false);
 
     try {
       const response = await fetch(`${SOCKET_URL}/api/chat`, {
@@ -74,190 +73,213 @@ function Dashboard() {
       const data = await response.json();
       
       setSummary(data.answer);
-      
-      const healthData = data.results?.find(r => r.domain === 'Healthcare');
-      if (healthData) setHealthResult(`Assessment: ${healthData.assessment}\nRisk: ${healthData.riskLevel}\nNext Steps: ${healthData.nextSteps.join(', ')}`);
+      const results = data.data; // Unified output from Response Agent (Module 4)
 
-      const trafficData = data.results?.find(r => r.domain === 'Traffic');
-      if (trafficData) setTrafficResult({ congestion: trafficData.congestion || '--', bestRoute: trafficData.bestRoute || '--' });
+      if (results.healthcare) setHealthResult(results.healthcare);
+      if (results.healthcare?.riskLevel === 'High') setIsEmergency(true);
+      if (results.traffic) setTrafficResult(results.traffic);
+      if (results.billing) setBillingData(results.billing);
+      if (results.vitals) setVitalsData(results.vitals.current);
 
-      const billing = data.results?.find(r => r.domain === 'Billing');
-      if (billing) setBillingData({ total: billing.totalEstimated, breakdown: billing.breakdown, predicted: billing.totalEstimated });
+      // Auto-switch to healthcare analysis on result
+      setActiveTab('healthcare');
 
     } catch (error) {
       console.error("Error:", error);
-      setAgentLogs(prev => [...prev, { agent: 'System', message: 'Failed to connect to CORTEX core.', status: 'error' }]);
+      setAgentLogs(prev => [...prev, { agent: 'System', message: 'Failed to connect to CORTEX core.', status: 'error', timestamp: new Date() }]);
     }
     setIsProcessing(false);
   };
 
   return (
-    <div className="min-h-screen bg-[#f8fafc] font-sans text-slate-800 pb-12">
-      <header className="bg-gradient-to-br from-[#1e293b] to-[#0f172a] text-white py-6 px-6 shadow-xl relative overflow-hidden border-b border-emerald-500/20">
-        <div className="absolute top-0 right-0 w-64 h-64 bg-emerald-500/10 rounded-full blur-3xl -mr-32 -mt-32"></div>
+    <div className="min-h-screen bg-[#f1f5f9] font-sans text-slate-800 pb-12">
+      <header className="bg-gradient-to-br from-[#1e293b] to-[#0f172a] text-white py-6 px-6 shadow-2xl relative overflow-hidden border-b-2 border-emerald-500/20">
+        <div className="absolute top-0 right-0 w-64 h-64 bg-emerald-500/10 rounded-full blur-3xl -mr-32 -mt-32 animate-pulse"></div>
         <div className="max-w-6xl mx-auto flex justify-between items-center z-10 relative">
-            <div className="flex items-center gap-3">
-                <div className="bg-emerald-500 p-2 rounded-lg shadow-lg shadow-emerald-500/20">
-                    <Activity size={24} className="text-white"/>
-                </div>
+            <div className="flex items-center gap-4">
+                <motion.div 
+                    animate={{ rotate: isEmergency ? [0, 10, -10, 0] : 0 }} 
+                    transition={{ repeat: Infinity, duration: 0.5 }}
+                    className={`p-2.5 rounded-xl shadow-lg ${isEmergency ? 'bg-red-500 shadow-red-500/40' : 'bg-emerald-500 shadow-emerald-500/30'}`}
+                >
+                    <Activity size={28} className="text-white"/>
+                </motion.div>
                 <div>
-                    <h1 className="text-2xl font-bold tracking-tighter">CORTEX<span className="text-emerald-500">-OS</span></h1>
-                    <p className="text-[10px] uppercase tracking-widest text-emerald-500/70 font-bold">Smart AI Hospital System</p>
+                    <h1 className="text-2xl font-black tracking-tighter uppercase">CORTEX<span className={isEmergency ? 'text-red-500' : 'text-emerald-500'}>-OS</span></h1>
+                    <p className="text-[10px] uppercase tracking-[0.3em] font-black opacity-60 italic">Autonomous MCP-Agent Framework</p>
                 </div>
             </div>
-            <div className="flex items-center gap-4">
-                <div className="flex items-center gap-2 bg-slate-800 px-3 py-1.5 rounded-xl border border-slate-700">
-                    <UserIcon size={14} className="text-emerald-400"/>
-                    <span className="text-xs font-semibold">{user?.name || "Guest Patient"}</span>
-                </div>
+            <div className="flex items-center gap-4 text-[10px] font-black uppercase tracking-widest text-slate-400">
+                <div className="flex items-center gap-1.5"><div className="w-1.5 h-1.5 rounded-full bg-emerald-500"></div> System Online</div>
+                <div className="w-px h-4 bg-slate-700"></div>
+                <div className="flex items-center gap-1.5"><div className="w-1.5 h-1.5 rounded-full bg-blue-500"></div> {user?.name || "Guest Patient"}</div>
             </div>
         </div>
       </header>
 
-      <main className="max-w-6xl mx-auto mt-8 px-4 flex flex-col lg:flex-row gap-6">
-        <div className="flex-1 flex flex-col gap-6">
-          {/* AI Orchestrator Input */}
-          <div className="bg-white rounded-3xl shadow-sm border border-slate-200 p-8">
-            <h2 className="text-sm font-bold text-slate-400 uppercase tracking-wider mb-6 flex items-center gap-2">
-                <Search size={16} /> MCP Multi-Agent Assistant
-            </h2>
-            <form onSubmit={handleQuerySubmit} className="flex gap-3">
-              <input 
-                type="text" 
-                value={query}
-                onChange={(e) => setQuery(e.target.value)}
-                placeholder="Ask about vitals, billing, or doctor availability..." 
-                className="w-full px-6 py-4 bg-slate-50 border border-slate-200 rounded-2xl focus:outline-none focus:ring-2 focus:ring-emerald-500/20 focus:border-emerald-500 transition-all text-sm font-medium"
-              />
-              <button type="submit" className="bg-[#0f172a] hover:bg-emerald-600 text-white px-8 py-4 rounded-2xl font-bold transition-all shadow-lg flex items-center gap-2">
-                {isProcessing ? <RefreshCw className="animate-spin" size={18} /> : <Send size={18} />}
-                Execute
-              </button>
-            </form>
-            {summary && (
-              <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="mt-8 p-6 bg-emerald-50/50 text-emerald-900 rounded-2xl border border-emerald-100 italic text-sm">
-                "{summary}"
-              </motion.div>
-            )}
-          </div>
-
-          {/* Module Grid */}
-          <div className="grid grid-cols-2 md:grid-cols-4 gap-3 bg-slate-100 p-1.5 rounded-2xl border border-slate-200">
-            {[
-              { id: 'healthcare', icon: Stethoscope, label: 'Analysis' },
-              { id: 'vitals', icon: HeartPulse, label: 'Vitals' },
-              { id: 'payflow', icon: CreditCard, label: 'PayFlow' },
-              { id: 'doctors', icon: Users, label: 'Staff' }
-            ].map(tab => (
-              <button key={tab.id} onClick={() => setActiveTab(tab.id)} className={`py-3 px-4 rounded-xl text-xs font-bold flex items-center justify-center gap-2 transition-all ${activeTab === tab.id ? 'bg-white text-emerald-600 shadow-sm border border-slate-200' : 'text-slate-500 hover:text-slate-800'}`}>
-                <tab.icon size={14} /> {tab.label}
-              </button>
-            ))}
-          </div>
-
-          <div className="min-h-[400px]">
-            <AnimatePresence mode="wait">
-              {activeTab === 'healthcare' && (
-                <motion.div key="health" className="bg-white rounded-3xl shadow-sm border border-slate-200 p-8 h-full">
-                  <h3 className="text-lg font-bold mb-6 flex items-center gap-2"><Stethoscope className="text-blue-500"/> Clinical Decision Engine</h3>
-                  <div className="bg-[#0f172a] p-6 rounded-2xl text-emerald-400 font-mono text-xs h-64 overflow-y-auto">
-                    {healthResult || "// WAITING FOR PATIENT DATA INJECTION..."}
-                  </div>
-                </motion.div>
-              )}
-
-              {activeTab === 'vitals' && (
-                <motion.div key="vitals" className="bg-white rounded-3xl shadow-sm border border-slate-200 p-8 h-full">
-                  <h3 className="text-lg font-bold mb-6 flex items-center gap-2"><HeartPulse className="text-red-500"/> Biometric Monitor</h3>
-                  <div className="grid grid-cols-2 gap-4">
-                    {[
-                      { label: 'Heart Rate', value: vitalsData.heartRate, unit: 'BPM', color: 'text-red-500' },
-                      { label: 'SpO2', value: vitalsData.spo2, unit: '%', color: 'text-blue-500' },
-                      { label: 'Blood Pressure', value: vitalsData.bp, unit: 'mmHg', color: 'text-emerald-500' },
-                      { label: 'Temperature', value: vitalsData.temp, unit: '°F', color: 'text-orange-500' }
-                    ].map(v => (
-                      <div className="p-4 bg-slate-50 rounded-2xl border border-slate-200">
-                        <p className="text-[10px] uppercase font-bold text-slate-400 mb-1">{v.label}</p>
-                        <p className={`text-2xl font-black ${v.color}`}>{v.value}<span className="text-[10px] ml-1">{v.unit}</span></p>
-                      </div>
-                    ))}
-                  </div>
-                </motion.div>
-              )}
-
-              {activeTab === 'payflow' && (
-                <motion.div key="payflow" className="bg-white rounded-3xl shadow-sm border border-slate-200 p-8 h-full">
-                  <div className="flex justify-between items-center mb-6">
-                    <h3 className="text-lg font-bold flex items-center gap-2"><CreditCard className="text-emerald-500"/> PayFlow AI Billing</h3>
-                    <span className="bg-emerald-100 text-emerald-700 text-[10px] font-bold px-3 py-1 rounded-full border border-emerald-200">AUTO-AUDITED</span>
-                  </div>
-                  <div className="space-y-4">
-                    <div className="p-6 bg-slate-900 rounded-2xl text-white">
-                        <p className="text-xs text-slate-400 uppercase font-bold tracking-widest">Estimated Total Bill</p>
-                        <p className="text-4xl font-black text-emerald-400 mt-2">{billingData.total || '₹0'}</p>
-                        <div className="mt-4 flex items-center gap-2 text-[10px] text-slate-400">
-                            <TrendingUp size={12}/> Predicted Discharge Cost: {billingData.total || '₹0'}
-                        </div>
-                    </div>
-                    <div className="bg-slate-50 border border-slate-200 rounded-2xl p-4">
-                        <p className="text-[10px] font-bold text-slate-400 uppercase mb-3">Itemized Breakdown</p>
-                        {billingData.breakdown.length > 0 ? billingData.breakdown.map(item => (
-                            <div className="flex justify-between text-xs py-2 border-b border-slate-100 last:border-0">
-                                <span>{item.item}</span>
-                                <span className="font-bold">{item.cost}</span>
-                            </div>
-                        )) : <p className="text-xs italic text-slate-500">No active charges detected.</p>}
-                    </div>
-                  </div>
-                </motion.div>
-              )}
-
-              {activeTab === 'doctors' && (
-                <motion.div key="doctors" className="bg-white rounded-3xl shadow-sm border border-slate-200 p-8 h-full">
-                  <h3 className="text-lg font-bold mb-6 flex items-center gap-2"><Users className="text-indigo-500"/> Staff Operations</h3>
-                  <div className="space-y-4">
-                    {[
-                      { name: 'Dr. Sarah Chen', spec: 'Cardiology', status: 'Available', color: 'bg-emerald-500' },
-                      { name: 'Dr. Michael Ross', spec: 'General Medicine', status: 'In Surgery', color: 'bg-orange-500' }
-                    ].map(dr => (
-                      <div className="flex items-center justify-between p-4 bg-slate-50 rounded-2xl border border-slate-200">
-                        <div className="flex items-center gap-3">
-                            <div className="w-10 h-10 bg-slate-200 rounded-xl flex items-center justify-center font-bold text-slate-600">{dr.name[4]}</div>
-                            <div>
-                                <p className="text-sm font-bold text-slate-800">{dr.name}</p>
-                                <p className="text-[10px] text-slate-500">{dr.spec}</p>
-                            </div>
-                        </div>
-                        <div className="flex items-center gap-2">
-                             <span className={`w-2 h-2 rounded-full ${dr.color} animate-pulse`}></span>
-                             <span className="text-[10px] font-bold text-slate-600">{dr.status}</span>
-                        </div>
-                      </div>
-                    ))}
-                  </div>
-                </motion.div>
-              )}
-            </AnimatePresence>
-          </div>
-        </div>
-
-        <div className="w-full lg:w-80 border border-slate-200 bg-white shadow-xl rounded-3xl overflow-hidden flex flex-col h-[650px] sticky top-6">
+      <main className="max-w-7xl mx-auto mt-8 px-4 grid grid-cols-1 lg:grid-cols-12 gap-8 items-start">
+        
+        {/* SIDE LOG PANEL (Module 8 & 9) */}
+        <aside className="lg:col-span-3 border-2 border-slate-200/50 bg-white shadow-2xl rounded-[2.5rem] overflow-hidden flex flex-col h-[750px] sticky top-8">
           <div className="bg-[#0f172a] text-white p-6">
-            <h3 className="font-bold flex items-center gap-2 text-xs uppercase tracking-[0.2em] text-emerald-500">
-              <span className="flex h-2 w-2 rounded-full bg-emerald-500 animate-pulse"></span>
-              MCP Node Logs
+            <h3 className="font-extrabold flex items-center gap-2 text-[10px] uppercase tracking-[0.2em] text-emerald-500">
+              <span className="flex h-2 w-2 rounded-full bg-emerald-500 animate-ping" />
+              MCP Orchestrator Logs
             </h3>
           </div>
-          <div className="flex-1 overflow-y-auto p-6 flex flex-col gap-3 font-mono text-[9px]">
-            {agentLogs.map((log, idx) => (
-              <div key={idx} className="p-3 bg-slate-50 border border-slate-200 rounded-xl">
-                <p className="font-bold text-emerald-600">[{log.agent}]</p>
-                <p className="mt-1 text-slate-800">{log.message}</p>
+          <div className="flex-1 overflow-y-auto p-5 flex flex-col gap-4 font-mono">
+            {agentLogs.length === 0 && (
+              <div className="flex flex-col items-center justify-center h-full opacity-20 italic text-center gap-3">
+                <Activity size={32} className="animate-spin-slow"/>
+                <span className="text-[10px] font-black uppercase">Interlink Idle</span>
               </div>
+            )}
+            {agentLogs.map((log, idx) => (
+              <motion.div 
+                initial={{ opacity: 0, x: -20 }}
+                animate={{ opacity: 1, x: 0 }}
+                key={idx} 
+                className={`p-4 rounded-2xl border-2 transition-all ${
+                    log.status === 'active' || log.status === 'thinking' ? 'bg-blue-50/50 border-blue-100' : 
+                    log.status === 'success' || log.status === 'done' ? 'bg-emerald-50/50 border-emerald-100' : 
+                    log.status === 'error' ? 'bg-red-50/50 border-red-100' : 'bg-slate-50 border-slate-100'
+                }`}
+              >
+                <div className="flex items-center justify-between mb-2">
+                    <span className={`text-[8px] font-black uppercase px-2 py-0.5 rounded ${
+                        log.status === 'active' || log.status === 'thinking' ? 'bg-blue-500 text-white' : 
+                        log.status === 'success' || log.status === 'done' ? 'bg-emerald-500 text-white' : 
+                        log.status === 'error' ? 'bg-red-500 text-white' : 'bg-slate-200 text-slate-600'
+                    }`}>
+                        {log.agent}
+                    </span>
+                    <span className="text-[7px] font-bold text-slate-400">{new Date(log.timestamp).toLocaleTimeString([], { hour12: false, hour: '2-digit', minute: '2-digit', second: '2-digit' })}</span>
+                </div>
+                <p className="text-[10px] font-bold text-slate-700 leading-tight">
+                    {log.status === 'thinking' ? '● ' : '↳ '}
+                    {log.message}
+                </p>
+              </motion.div>
             ))}
             <div ref={logsEndRef} />
           </div>
-        </div>
+        </aside>
+
+        {/* MAIN ORCHESTRATION HUB */}
+        <section className="lg:col-span-9 flex flex-col gap-8">
+          
+          {/* Autonomous Flow (Module 9 & 10) */}
+          <div className="bg-white rounded-[2.5rem] shadow-xl border border-slate-200/50 p-6">
+            <div className="flex items-center justify-around">
+                {[
+                    { label: 'Input', icon: Search, color: 'text-slate-400' },
+                    { label: 'Planner', icon: RefreshCw, color: 'text-blue-500' },
+                    { label: 'MCP Tools', icon: Stethoscope, color: 'text-indigo-500' },
+                    { label: 'Response', icon: BadgeCheck, color: 'text-emerald-500' }
+                ].map((step, i) => (
+                    <React.Fragment key={i}>
+                        <div className="flex flex-col items-center gap-2">
+                            <div className={`p-4 rounded-2xl bg-slate-50 border border-slate-100 ${isProcessing && i === 1 ? 'animate-pulse border-blue-500 ring-4 ring-blue-500/10' : ''}`}>
+                                <step.icon size={20} className={step.color}/>
+                            </div>
+                            <span className="text-[9px] font-black uppercase tracking-widest text-slate-500">{step.label}</span>
+                        </div>
+                        {i < 3 && <div className={`flex-1 h-0.5 max-w-[40px] ${isProcessing ? 'bg-emerald-500 animate-pulse' : 'bg-slate-100'}`}></div>}
+                    </React.Fragment>
+                ))}
+            </div>
+          </div>
+
+          <div className="bg-white rounded-[2.5rem] shadow-2xl border-2 border-white p-10 relative overflow-hidden">
+            <div className="absolute top-0 right-0 w-64 h-64 bg-emerald-500/5 blur-3xl"></div>
+            
+            <div className="relative z-10">
+                <h2 className="text-xs font-black text-slate-400 uppercase tracking-[0.2em] mb-8">Execute Autonomous Core</h2>
+                <form onSubmit={handleQuerySubmit} className="flex gap-4">
+                  <input 
+                    type="text" 
+                    value={query}
+                    onChange={(e) => setQuery(e.target.value)}
+                    placeholder="E.g., 'I have sharp chest pain, check my bill and find a doctor'" 
+                    className="flex-1 px-8 py-5 bg-slate-50 border-2 border-slate-100 rounded-3xl focus:outline-none focus:ring-4 focus:ring-emerald-500/10 focus:border-emerald-500 transition-all text-sm font-bold shadow-inner"
+                  />
+                  <motion.button 
+                    whileHover={{ scale: 1.02 }}
+                    whileTap={{ scale: 0.98 }}
+                    type="submit" 
+                    disabled={isProcessing}
+                    className={`px-12 py-5 rounded-3xl font-black text-xs uppercase flex items-center gap-3 transition-all shadow-xl ${isProcessing ? 'bg-slate-400' : 'bg-[#0f172a] text-white hover:bg-emerald-600'}`}
+                  >
+                    {isProcessing ? <RefreshCw className="animate-spin" size={16} /> : <Activity size={16} />}
+                    {isProcessing ? 'Thinking...' : 'Execute MCP'}
+                  </motion.button>
+                </form>
+
+                <AnimatePresence>
+                    {isEmergency && (
+                      <motion.div 
+                        initial={{ opacity: 0, scale: 0.9 }}
+                        animate={{ opacity: 1, scale: 1 }}
+                        className="mt-10 p-8 bg-red-600 rounded-[2rem] text-white shadow-2xl relative overflow-hidden"
+                      >
+                        <div className="relative z-10 flex flex-col md:flex-row items-center gap-8">
+                            <ShieldAlert size={56} className="animate-pulse opacity-80" />
+                            <div className="flex-1 lg:border-l lg:border-white/20 lg:pl-8">
+                                <h3 className="text-2xl font-black uppercase italic mb-2 tracking-tighter">⚠️ CRITICAL STATUS DETECTED</h3>
+                                <p className="text-sm font-bold opacity-90 leading-relaxed mb-6">Autonomous systems have bypassed manual scheduling. EMS protocols finalized.</p>
+                                <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+                                    <div className="bg-white/10 p-3 rounded-2xl"><p className="text-[7px] uppercase font-black opacity-60">Risk</p><p className="text-xs font-bold">{healthResult?.riskProbability}</p></div>
+                                    <div className="bg-white/10 p-3 rounded-2xl"><p className="text-[7px] uppercase font-black opacity-60">ETA</p><p className="text-xs font-bold">{trafficResult?.eta}</p></div>
+                                    <div className="bg-white/10 p-3 rounded-2xl"><p className="text-[7px] uppercase font-black opacity-60">Doctor</p><p className="text-xs font-bold">Assigned</p></div>
+                                    <div className="bg-white/10 p-3 rounded-2xl"><p className="text-[7px] uppercase font-black opacity-60">Est. Bill</p><p className="text-xs font-bold">₹{(billingData.predicted || 0).toLocaleString()}</p></div>
+                                </div>
+                            </div>
+                        </div>
+                      </motion.div>
+                    )}
+                </AnimatePresence>
+
+                {summary && !isEmergency && (
+                  <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="mt-8 p-6 bg-emerald-50/50 text-emerald-950 rounded-2xl border border-emerald-100 text-sm font-bold italic leading-relaxed">
+                    "{summary}"
+                  </motion.div>
+                )}
+            </div>
+          </div>
+
+          <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+            {[
+              { id: 'healthcare', icon: Stethoscope, label: 'Analysis' },
+              { id: 'vitals', icon: HeartPulse, label: 'Biometrics' },
+              { id: 'payflow', icon: CreditCard, label: 'Financials' },
+              { id: 'doctors', icon: Users, label: 'Ops Core' }
+            ].map(tab => (
+              <button key={tab.id} onClick={() => setActiveTab(tab.id)} className={`py-4 px-6 rounded-2xl text-[9px] font-black uppercase tracking-widest flex items-center justify-center gap-3 transition-all ${activeTab === tab.id ? 'bg-white text-emerald-600 shadow-xl border border-slate-200' : 'bg-slate-800/5 text-slate-500 hover:text-slate-800'}`}>
+                <tab.icon size={16} /> {tab.label}
+              </button>
+            ))}
+          </div>
+
+          <div className="min-h-[500px]">
+            <AnimatePresence mode="wait">
+              {activeTab === 'healthcare' && !isEmergency && <ClinicalAnalysisCard key="health" data={healthResult} />}
+              {activeTab === 'healthcare' && isEmergency && (
+                  <div className="grid md:grid-cols-2 gap-8 h-full">
+                      <ClinicalAnalysisCard data={healthResult} />
+                      <TrafficCard data={trafficResult} />
+                  </div>
+              )}
+              {activeTab === 'vitals' && <VitalsCard key="vitals" data={vitalsData} />}
+              {activeTab === 'payflow' && <PayFlowCard key="payflow" data={billingData} />}
+              {activeTab === 'doctors' && (
+                <DoctorCard key="doctors" doctors={[
+                  { name: 'Dr. Sarah Chen', spec: 'Cardiology', status: 'Available' },
+                  { name: 'Dr. Michael Ross', spec: 'General Medicine', status: 'In Surgery' }
+                ]} />
+              )}
+            </AnimatePresence>
+          </div>
+        </section>
       </main>
     </div>
   );
