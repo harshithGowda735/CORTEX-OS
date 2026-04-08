@@ -7,7 +7,8 @@ import { Mail, Lock, Loader2, LogIn } from 'lucide-react';
 const Login = () => {
     const [data, setData] = useState({
         email: "",
-        password: ""
+        password: "",
+        role: "patient" // Default role
     });
     const [loading, setLoading] = useState(false);
     const navigate = useNavigate();
@@ -29,6 +30,14 @@ const Login = () => {
             });
             if (response.data.success) {
                 const userData = response.data.data;
+                
+                // Verify if the role matches the selected role for the demo
+                if (userData.role !== data.role) {
+                    toast.error(`This account is registered as a ${userData.role}, not a ${data.role}.`);
+                    setLoading(false);
+                    return;
+                }
+
                 localStorage.setItem('user', JSON.stringify(userData));
                 toast.success("Welcome back, " + userData.name);
                 
@@ -53,10 +62,29 @@ const Login = () => {
                     <h1 className="text-3xl font-bold bg-gradient-to-r from-[#10b981] to-[#3b82f6] bg-clip-text text-transparent">
                         CORTEX-OS
                     </h1>
-                    <p className="text-[#94a3b8] mt-2 font-medium">Unified Sign-in</p>
-                    <div className="mt-4 flex justify-center gap-2">
-                        <span className="px-2 py-1 rounded bg-[#10b981]/10 text-[#10b981] text-[10px] uppercase font-black tracking-widest border border-[#10b981]/20">Patients</span>
-                        <span className="px-2 py-1 rounded bg-[#3b82f6]/10 text-[#3b82f6] text-[10px] uppercase font-black tracking-widest border border-[#3b82f6]/20">Hospital Staff</span>
+                    <div className="mt-4 flex justify-center p-1 bg-[#0f172a] rounded-xl border border-[#334155] w-fit mx-auto">
+                        <button
+                            type="button"
+                            onClick={() => setData(prev => ({ ...prev, role: 'patient' }))}
+                            className={`px-4 py-2 rounded-lg text-[10px] font-black uppercase tracking-widest transition-all ${
+                                data.role === 'patient' 
+                                ? 'bg-emerald-500 text-white shadow-lg shadow-emerald-500/20' 
+                                : 'text-[#475569] hover:text-[#94a3b8]'
+                            }`}
+                        >
+                            Patient
+                        </button>
+                        <button
+                            type="button"
+                            onClick={() => setData(prev => ({ ...prev, role: 'hospital' }))}
+                            className={`px-4 py-2 rounded-lg text-[10px] font-black uppercase tracking-widest transition-all ${
+                                data.role === 'hospital' 
+                                ? 'bg-[#3b82f6] text-white shadow-lg shadow-blue-500/20' 
+                                : 'text-[#475569] hover:text-[#94a3b8]'
+                            }`}
+                        >
+                            Hospital Staff
+                        </button>
                     </div>
                 </div>
 

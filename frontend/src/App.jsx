@@ -37,6 +37,12 @@ function Dashboard() {
   const [isEmergency, setIsEmergency] = useState(false);
 
   useEffect(() => {
+    // Role-Guard: If role is hospital, push to management
+    if (user?.role === 'hospital') {
+      window.location.href = '/management';
+      return;
+    }
+
     const newSocket = io(SOCKET_URL);
     setSocket(newSocket);
 

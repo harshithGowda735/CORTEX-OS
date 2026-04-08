@@ -40,6 +40,13 @@ export default function HospitalManagement() {
   };
 
   useEffect(() => {
+    // Role-Guard: If role is patient, push to dashboard
+    const user = JSON.parse(localStorage.getItem('user'));
+    if (user?.role === 'patient') {
+      window.location.href = '/';
+      return;
+    }
+
     fetchDashboard();
     const newSocket = io(SOCKET_URL);
     setSocket(newSocket);
