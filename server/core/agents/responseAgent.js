@@ -32,6 +32,11 @@ Structure your response clearly with headers like:
 - **Vitals Alert** (if applicable)
 - **Logistics & ETA** (if applicable)
 - **Immediate Next Steps**
+
+LANGUAGE REQUIREMENT: 
+Detect the primary language of the user's query ("${query}"). 
+You MUST provide the entire synthesized response (headers and content) in that same language (e.g., Hindi, Kannada, Tamil, etc.). 
+If you cannot detect the language, default to English.
 `;
 
   try {

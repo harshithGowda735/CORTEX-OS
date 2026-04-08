@@ -140,6 +140,7 @@ function Dashboard() {
                     🏥 Hospital Command
                   </button>
                 )}
+                <div id="google_translate_element" className="ml-4 overflow-hidden rounded-lg"></div>
                 <button onClick={() => { localStorage.removeItem('user'); navigate('/login'); }} className="px-4 py-2 bg-red-500/10 text-red-400 rounded-xl hover:bg-red-500/20 transition-all border border-red-500/20 flex items-center gap-1.5">
                   <LogOut size={12} /> Logout
                 </button>
