@@ -2,7 +2,6 @@
  * OpenRouter AI Service
  * Handles communication with Gemma 3 27B through OpenRouter
  */
-require('dotenv').config();
 
 const callAI = async (messages, options = {}) => {
   const apiKey = process.env.OPENROUTER_API_KEY;

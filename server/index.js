@@ -1,8 +1,9 @@
+require('dotenv').config();
+
 const express = require('express');
 const http = require('http');
 const { Server } = require('socket.io');
 const cors = require('cors');
-const dotenv = require('dotenv');
 const cookieParser = require('cookie-parser');
 const helmet = require('helmet');
 const connectDB = require('./config/connectDB');
@@ -11,8 +12,6 @@ const bookingRouter = require('./routes/bookingRoute');
 const hospitalRouter = require('./routes/hospitalRoute');
 const { setupSocketHandlers } = require('./core/socket/socketHandler');
 const orchestrator = require('./core/orchestrator/orchestrator');
-
-dotenv.config();
 
 const app = express();
 const server = http.createServer(app);
@@ -73,6 +72,12 @@ app.post('/api/chat', async (req, res) => {
 
 const PORT = process.env.PORT || 5000;
 
+// Validate Env
+if (!process.env.MONGODB_URI) {
+    console.error('❌ CRITICAL ERROR: MONGODB_URI is not defined in environment variables.');
+    process.exit(1);
+}
+
 // Connect to DB and Start Server
 connectDB().then(() => {
     server.listen(PORT, () => {
@@ -81,5 +86,6 @@ connectDB().then(() => {
         console.log(`================================================\n`);
     });
 }).catch((err) => {
-    console.error("Failed to connect to database:", err);
+    console.error("❌ Failed to connect to database:", err.message);
+    process.exit(1);
 });
