@@ -27,3 +27,6 @@ services:
       - key: GEMINI_API_KEY
         value: "" # Set in Render Dashboard
         sync: false
+      - key: GOOGLE_MAPS_API_KEY
+        value: "" # Set in Render Dashboard
+        sync: false
