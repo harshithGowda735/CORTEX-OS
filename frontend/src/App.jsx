@@ -8,6 +8,7 @@ import Login from './components/Auth/Login';
 import VerifyEmail from './components/Auth/VerifyEmail';
 import HospitalManagement from './components/HospitalManagement';
 import toast from 'react-hot-toast';
+import CortexAssistant from './components/Assistant/CortexAssistant';
 
 // New Hospital Components
 import ClinicalAnalysisCard from './components/Hospital/ClinicalAnalysisCard';
@@ -371,6 +372,8 @@ function Dashboard() {
           </div>
         </section>
       </main>
+
+      <CortexAssistant user={user} location={userLocation} />
     </div>
   );
 }

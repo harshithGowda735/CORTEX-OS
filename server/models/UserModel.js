@@ -61,6 +61,11 @@ const userSchema = new mongoose.Schema({
     type: mongoose.Schema.ObjectId,
     ref: 'Transaction'
   }],
+  emergencyContacts: [{
+    name: { type: String, required: true },
+    email: { type: String, required: true },
+    phone: { type: String, required: true }
+  }],
 }, {
   timestamps: true,
 });

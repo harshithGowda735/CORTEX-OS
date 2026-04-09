@@ -26,6 +26,7 @@ const connectDB = require('./config/connectDB');
 const userRouter = require('./routes/userRoute');
 const bookingRouter = require('./routes/bookingRoute');
 const hospitalRouter = require('./routes/hospitalRoute');
+const emergencyRouter = require('./routes/emergencyRoute');
 const { setupSocketHandlers } = require('./core/socket/socketHandler');
 const orchestrator = require('./core/orchestrator/orchestrator');
 
@@ -90,6 +91,9 @@ app.use('/api/booking', bookingRouter);
 
 // Hospital Management Routes
 app.use('/api/hospital', hospitalRouter);
+
+// Emergency SOS Routes
+app.use('/api/emergency', emergencyRouter);
 
 // Chat Endpoint (Protected or public depending on preference, currently public)
 app.post('/api/chat', async (req, res) => {
