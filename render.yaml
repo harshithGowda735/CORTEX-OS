@@ -22,8 +22,9 @@ services:
         value: "" # Set in Render Dashboard
         sync: false
       - key: FRONTEND_URL
-        value: "" # Set in Render Dashboard
-        sync: false
+        value: "https://cortex-os-blond.vercel.app"
+      - key: BACKEND_URL
+        value: "https://cortex-os-9.onrender.com"
       - key: GEMINI_API_KEY
         value: "" # Set in Render Dashboard
         sync: false
