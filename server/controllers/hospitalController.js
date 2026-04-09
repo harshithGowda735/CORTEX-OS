@@ -112,8 +112,9 @@ const updatePricing = async (req, res) => {
 };
 
 // AUTONOMOUS BOOKING (called by the orchestrator, not by HTTP)
-const autonomousBook = async ({ userId, department, severity, doctorId, reason }) => {
+const autonomousBook = async ({ userId, department, severity, doctorId, reason, targetHospital }) => {
   try {
+    const hospitalName = targetHospital || 'CORTEX City Care Hospital';
     const hospital = await HospitalResourceModel.findOne();
     if (!hospital) throw new Error('Hospital resource not found');
 
@@ -126,7 +127,7 @@ const autonomousBook = async ({ userId, department, severity, doctorId, reason }
     let bedType = 'general';
     if (severity === 'High') bedType = 'emergency';
 
-    // 3. Allocate bed
+    // 3. Allocate bed (Simulated for target hospital if not central)
     if (hospital.beds[bedType] && hospital.beds[bedType].available > 0) {
       hospital.beds[bedType].available -= 1;
       hospital.beds.available -= 1;
@@ -145,7 +146,7 @@ const autonomousBook = async ({ userId, department, severity, doctorId, reason }
       appointmentDate,
       timeSlot,
       status: severity === 'High' ? 'Confirmed' : 'Pending',
-      reason: reason || 'Auto-booked by CORTEX-OS MCP'
+      reason: reason || `Auto-booked at ${hospitalName} by CORTEX-OS MCP`
     });
     await booking.save();
 
@@ -160,11 +161,12 @@ const autonomousBook = async ({ userId, department, severity, doctorId, reason }
 
     return {
       booking: booking.toObject(),
+      hospitalName,
       bedAllocated: bedType,
       bedsRemaining: hospital.beds[bedType].available,
       estimatedCost,
       severityMultiplier: multiplier,
-      message: `Auto-booked: ${department} at ${timeSlot}. Bed (${bedType}) allocated. Est. cost: ₹${estimatedCost.toLocaleString()}`
+      message: `Auto-booked at ${hospitalName}: ${department} at ${timeSlot}. Bed (${bedType}) allocated. Est. cost: ₹${estimatedCost.toLocaleString()}`
     };
   } catch (error) {
     console.error('❌ [AUTONOMOUS BOOKING] Error:', error.message);

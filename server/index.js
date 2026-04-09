@@ -56,13 +56,13 @@ app.use('/api/hospital', hospitalRouter);
 
 // Chat Endpoint (Protected or public depending on preference, currently public)
 app.post('/api/chat', async (req, res) => {
-  const { query, userId } = req.body;
+  const { query, userId, location } = req.body;
   if (!query) {
     return res.status(400).json({ error: 'Query is required' });
   }
 
   try {
-    const response = await orchestrator.processQuery(query, userId, io);
+    const response = await orchestrator.processQuery(query, userId, io, location);
     res.json(response);
   } catch (error) {
     console.error('Orchestration error:', error);

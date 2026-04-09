@@ -17,25 +17,28 @@ const analyzeHealth = async (context) => {
 
   const lowerQuery = query.toLowerCase();
 
+  const logistics = context.results.logistics;
+  const facility = logistics?.nearest?.name || "City Care Hospital";
+
   if (lowerQuery.includes('pain') && lowerQuery.includes('chest')) {
-    response.assessment = "Acute discomfort in thoracic region reported. Cardiovascular distress suspected.";
+    response.assessment = `Acute thoracic distress reported. Risk protocol initiated for ${facility}.`;
     response.riskLevel = 'High';
     response.riskProbability = '88%';
     response.marker = 'Emergency';
-    response.nextSteps = ["Immediate clinical triage", "Administer ASA if appropriate", "Continuous vitals profiling"];
+    response.nextSteps = [`Immediate clinical triage at ${facility}`, "Administer ASA if appropriate", "Continuous vitals profiling"];
   } else if (lowerQuery.includes('fever') || lowerQuery.includes('cold')) {
-    response.assessment = "Symptoms indicate standard viral respiratory infection.";
+    response.assessment = `Viral infection suspected. Standard protocol active for ${facility}.`;
     response.riskLevel = 'Moderate';
     response.riskProbability = '25%';
     response.marker = 'Urgent';
-    response.nextSteps = ["In-person consultation within 24h", "Temp monitoring", "Hydration protocol"];
+    response.nextSteps = [`Consultation at ${facility} within 24h`, "Temp monitoring", "Hydration protocol"];
   } else {
-    response.assessment = "Predictive wellness check. No acute pathology detected.";
+    response.assessment = `Wellness check complete. Reference center: ${facility}.`;
     response.riskLevel = 'Low';
     response.nextSteps = ["Annual physical exam", "Standard biometric tracking"];
   }
 
-  emitAgentActivity(userId, { agent: 'Healthcare Agent', message: 'Clinical assessment synthesized.', status: 'done' });
+  emitAgentActivity(userId, { agent: 'Healthcare Agent', message: `Clinical assessment synced with ${facility}.`, status: 'done' });
   context.results.healthcare = response;
   return response;
 };

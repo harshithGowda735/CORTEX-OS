@@ -35,6 +35,7 @@ function Dashboard() {
   const [billingData, setBillingData] = useState({ total: 0, breakdown: [], predicted: 0 });
   const [summary, setSummary] = useState('');
   const [isEmergency, setIsEmergency] = useState(false);
+  const [userLocation, setUserLocation] = useState(null);
 
   useEffect(() => {
     // Role-Guard: If role is hospital, push to management
@@ -65,6 +66,21 @@ function Dashboard() {
       }
     });
 
+    // Capture Location
+    if (navigator.geolocation) {
+      navigator.geolocation.getCurrentPosition(
+        (position) => {
+          const { latitude, longitude } = position.coords;
+          setUserLocation({ lat: latitude, lng: longitude });
+          console.log(`📍 Location captured: ${latitude}, ${longitude}`);
+        },
+        (error) => {
+          console.warn("⚠️ Location access denied or failed:", error.message);
+          toast.error("Location access denied. Using default region.");
+        }
+      );
+    }
+
     return () => {
         newSocket.disconnect();
     };
@@ -89,7 +105,11 @@ function Dashboard() {
       const response = await fetch(`${SOCKET_URL}/api/chat`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ query, userId: user?._id || 'demo_user' })
+        body: JSON.stringify({ 
+          query, 
+          userId: user?._id || 'demo_user',
+          location: userLocation
+        })
       });
       const data = await response.json();
       

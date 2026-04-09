@@ -4,6 +4,7 @@ const { monitorVitals } = require('../../agents/domain/vitalsAgent');
 const { manageOperations } = require('../../agents/domain/operationsAgent');
 const { analyzeBilling } = require('../../agents/domain/payflowAgent');
 const { analyzeTraffic } = require('../../agents/domain/trafficAgent');
+const { spatialNexusAnalysis } = require('../../agents/domain/logisticsAgent');
 
 /**
  * Register all domain agents as MCP Tools
@@ -37,6 +38,12 @@ const initMCPTools = () => {
     name: "traffic_logistics",
     description: "Calculates emergency routes, ETA, and optimal navigation for medical transport.",
     execute: analyzeTraffic
+  });
+
+  server.registerTool({
+    name: "spatial_nexus_analysis",
+    description: "Analyzes geographical context, identifies nearest hospitals, and rankings facilities by proximity.",
+    execute: spatialNexusAnalysis
   });
 };
 

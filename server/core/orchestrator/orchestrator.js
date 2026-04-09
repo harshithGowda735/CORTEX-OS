@@ -15,13 +15,15 @@ const { autonomousBook } = require('../../controllers/hospitalController');
 // Initialize MCP Tools once
 initMCPTools();
 
-const processQuery = async (query, userId = 'default_user', io) => {
+const processQuery = async (query, userId = 'default_user', io, location) => {
   console.log(`🧠 [CORTEX MCP] Processing: "${query}"`);
 
   // 🔥 1. CREATE SHARED CONTEXT (CORE MCP - MODULE 1)
   const context = {
     query,
     userId,
+    location, // Injected from frontend
+    geoContext: null, // Populated by spatial_nexus_analysis
     memory: memoryService.getMemory(userId),
     urgency: "normal",
     results: {},
@@ -35,7 +37,18 @@ const processQuery = async (query, userId = 'default_user', io) => {
     timestamp: new Date()
   });
 
-  // 🔥 2. PLANNER (TASK DECOMPOSITION - MODULE 2)
+  // 🔥 2. PRE-PROCESS: SPATIAL NEXUS (MCP Core Concept)
+  // If location is provided, we ALWAYS run the logistics tool first to enrich the context
+  if (location) {
+    try {
+      const geoResult = await server.callTool("spatial_nexus_analysis", context);
+      context.results.logistics = geoResult;
+    } catch (error) {
+      console.error("❌ MCP Spatial Nexus Failed:", error.message);
+    }
+  }
+
+  // 🔥 3. PLANNER (TASK DECOMPOSITION - MODULE 2)
   const domainsToTrigger = await plannerAgent.planExecution(query, context.memory, userId);
 
   emitAgentActivity(userId, {
@@ -45,7 +58,7 @@ const processQuery = async (query, userId = 'default_user', io) => {
     timestamp: new Date()
   });
 
-  // 🔥 3. MCP TOOL EXECUTION (MODULE 6)
+  // 🔥 4. MCP TOOL EXECUTION (MODULE 6)
   const toolMap = {
     healthcare: "healthcare_diagnostics",
     vitals: "vitals_monitoring",
@@ -89,15 +102,17 @@ const processQuery = async (query, userId = 'default_user', io) => {
   // 🔥 PARALLEL EXECUTION (TRUE MCP)
   await Promise.all(agentTasks);
 
-  // 🔥 4. AUTONOMOUS BOOKING (MODULE 12)
-  // If healthcare risk is High or Moderate, auto-book appointment and allocate resources
+  // 🔥 5. AUTONOMOUS BOOKING (MODULE 12)
   const healthResult = context.results.healthcare;
   const opsResult = context.results.operations;
+  const logisticsResult = context.results.logistics;
 
   if (healthResult && (healthResult.riskLevel === 'High' || healthResult.riskLevel === 'Moderate')) {
+    const targetHospital = logisticsResult?.nearest?.name || 'CORTEX City Care Hospital';
+
     emitAgentActivity(userId, {
       agent: 'Auto-Booking',
-      message: `${healthResult.riskLevel} risk detected. Initiating autonomous resource allocation...`,
+      message: `${healthResult.riskLevel} risk detected. Routing to nearest facility: ${targetHospital}...`,
       status: 'active',
       timestamp: new Date()
     });
@@ -108,6 +123,7 @@ const processQuery = async (query, userId = 'default_user', io) => {
         department: opsResult?.assignedSpecialization || 'General Consultation',
         severity: healthResult.riskLevel,
         doctorId: opsResult?.assignedDoctorId || null,
+        targetHospital, // Now location-aware
         reason: `Auto-booked: ${healthResult.assessment}`
       });
 
@@ -120,7 +136,6 @@ const processQuery = async (query, userId = 'default_user', io) => {
         timestamp: new Date()
       });
 
-      // Emit hospital-update so the Management Dashboard updates in real-time
       if (io) {
         io.emit('hospital-update', {
           type: 'auto-booking',
@@ -138,7 +153,7 @@ const processQuery = async (query, userId = 'default_user', io) => {
     }
   }
 
-  // 🔥 5. RESPONSE SYNTHESIS (MODULE 4)
+  // 🔥 6. RESPONSE SYNTHESIS (MODULE 4)
   emitAgentActivity(userId, {
     agent: 'Response',
     message: 'Synthesizing final output...',
@@ -148,7 +163,7 @@ const processQuery = async (query, userId = 'default_user', io) => {
 
   const finalResponse = await responseAgent.generateResponse(context.results, context);
 
-  // 🔥 6. MEMORY UPDATE (CONTEXT PERSISTENCE - MODULE 7)
+  // 🔥 7. MEMORY UPDATE (CONTEXT PERSISTENCE - MODULE 7)
   memoryService.saveInteraction(userId, {
     query,
     response: finalResponse.answer,
