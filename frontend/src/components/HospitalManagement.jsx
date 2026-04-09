@@ -471,40 +471,41 @@ export default function HospitalManagement() {
                           <h3 className="text-base font-black text-slate-800">{doc.name}</h3>
                           <p className="text-[10px] font-bold text-emerald-600 uppercase tracking-tighter">{doc.specialization} · {doc.qualification || 'MBBS, MD'}</p>
                           <p className="text-[10px] text-slate-500 mt-1">{doc.experience} Years Field Experience</p>
-                        <p className="text-[9px] text-slate-400 font-mono mt-1">{doc.email}</p>
-                        <div className="flex items-center gap-3 mt-3 text-[8px] font-black uppercase tracking-widest text-slate-400">
-                           <span className="flex items-center gap-1"><Clock size={10}/> {doc.shift?.start} - {doc.shift?.end}</span>
+                          <p className="text-[9px] text-slate-400 font-mono mt-1">{doc.email}</p>
+                          <div className="flex items-center gap-3 mt-3 text-[8px] font-black uppercase tracking-widest text-slate-400">
+                             <span className="flex items-center gap-1"><Clock size={10}/> {doc.shift?.start} - {doc.shift?.end}</span>
+                          </div>
+                        </div>
+                        <div className="flex flex-col items-end gap-2">
+                          <span className={`text-[9px] font-black uppercase px-2.5 py-1 rounded-lg ${
+                            doc.status === 'Available' ? 'bg-emerald-500/20 text-emerald-400' :
+                            doc.status === 'On Duty' ? 'bg-blue-500/20 text-blue-400' :
+                            doc.status === 'In Surgery' ? 'bg-red-500/20 text-red-400' :
+                            'bg-slate-500/20 text-slate-400'
+                          }`}>{doc.status}</span>
+                          <div className="flex gap-2">
+                             <select
+                              value={doc.status}
+                              onChange={(e) => handleDoctorStatus(doc._id, e.target.value)}
+                              className="bg-slate-100 border border-slate-200 rounded-lg px-2 py-1 text-[10px] text-slate-800 focus:outline-none focus:border-emerald-500"
+                            >
+                              <option value="Available">Available</option>
+                              <option value="On Duty">On Duty</option>
+                              <option value="In Surgery">In Surgery</option>
+                              <option value="Off Duty">Off Duty</option>
+                            </select>
+                            <button 
+                              onClick={() => handleDeleteDoctor(doc._id)}
+                              className="p-1.5 rounded-lg bg-red-500/10 text-red-500 hover:bg-red-500/20"
+                              title="Remove Staff"
+                            >
+                              <X size={14} />
+                            </button>
+                          </div>
                         </div>
                       </div>
-                      <div className="flex flex-col items-end gap-2">
-                        <span className={`text-[9px] font-black uppercase px-2.5 py-1 rounded-lg ${
-                          doc.status === 'Available' ? 'bg-emerald-500/20 text-emerald-400' :
-                          doc.status === 'On Duty' ? 'bg-blue-500/20 text-blue-400' :
-                          doc.status === 'In Surgery' ? 'bg-red-500/20 text-red-400' :
-                          'bg-slate-500/20 text-slate-400'
-                        }`}>{doc.status}</span>
-                        <div className="flex gap-2">
-                           <select
-                            value={doc.status}
-                            onChange={(e) => handleDoctorStatus(doc._id, e.target.value)}
-                            className="bg-slate-100 border border-slate-200 rounded-lg px-2 py-1 text-[10px] text-slate-800 focus:outline-none focus:border-emerald-500"
-                          >
-                            <option value="Available">Available</option>
-                            <option value="On Duty">On Duty</option>
-                            <option value="In Surgery">In Surgery</option>
-                            <option value="Off Duty">Off Duty</option>
-                          </select>
-                          <button 
-                            onClick={() => handleDeleteDoctor(doc._id)}
-                            className="p-1.5 rounded-lg bg-red-500/10 text-red-500 hover:bg-red-500/20"
-                            title="Remove Staff"
-                          >
-                            <X size={14} />
-                          </button>
-                        </div>
-                      </div>
-                    </div>
-                  ))}
+                    );
+                  })}
                 </div>
               </motion.div>
             )}

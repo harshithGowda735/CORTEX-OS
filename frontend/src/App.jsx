@@ -20,14 +20,13 @@ import BookingInteractionCard from './components/Hospital/BookingInteractionCard
 
 const SOCKET_URL = import.meta.env.VITE_API_URL || 'http://localhost:5000';
 
-function Dashboard() {
+function Dashboard({ user, userLocation }) {
   const [activeTab, setActiveTab] = useState('healthcare');
   const [query, setQuery] = useState('');
   const [isProcessing, setIsProcessing] = useState(false);
   const [agentLogs, setAgentLogs] = useState([]);
   const logsEndRef = useRef(null);
   const [socket, setSocket] = useState(null);
-  const [user, setUser] = useState(JSON.parse(localStorage.getItem('user')));
   const navigate = useNavigate();
   
   // Data States
@@ -39,7 +38,6 @@ function Dashboard() {
   const [suggestion, setSuggestion] = useState(null);
   const [summary, setSummary] = useState('');
   const [isEmergency, setIsEmergency] = useState(false);
-  const [userLocation, setUserLocation] = useState(null);
 
   useEffect(() => {
     // Role-Guard: If role is hospital, push to management
@@ -396,8 +394,8 @@ function App() {
         <Route path="/register" element={<Register />} />
         <Route path="/login" element={<Login />} />
         <Route path="/verify-email" element={<VerifyEmail />} />
-        <Route path="/management" element={<ProtectedRoute><HospitalManagement /></ProtectedRoute>} />
-        <Route path="/" element={<ProtectedRoute><Dashboard /></ProtectedRoute>} />
+        <Route path="/management" element={<ProtectedRoute><HospitalManagement user={user} /></ProtectedRoute>} />
+        <Route path="/" element={<ProtectedRoute><Dashboard user={user} userLocation={userLocation} /></ProtectedRoute>} />
       </Routes>
       <CortexAssistant user={user} location={userLocation} />
     </>
