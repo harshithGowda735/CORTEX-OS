@@ -85,4 +85,57 @@ const getMockHospitals = (lat, lng) => {
     ];
 };
 
-module.exports = { findNearbyHospitals };
+/**
+ * Get real-time traffic and distance data using Distance Matrix API
+ */
+const getTrafficData = async (origin, destination) => {
+  if (!API_KEY) {
+    console.warn("⚠️ API Key missing for traffic lookup.");
+    return null;
+  }
+
+  // Format: "lat,lng" for both
+  const originStr = `${origin.lat},${origin.lng}`;
+  const destStr = `${destination.lat},${destination.lng}`;
+
+  const url = `https://maps.googleapis.com/maps/api/distancematrix/json?origins=${originStr}&destinations=${destStr}&departure_time=now&mode=driving&key=${API_KEY}`;
+
+  try {
+    const response = await fetch(url);
+    const data = await response.json();
+
+    if (data.status !== 'OK' || !data.rows[0]?.elements[0]) {
+      throw new Error(`Traffic API Error: ${data.status}`);
+    }
+
+    const element = data.rows[0].elements[0];
+    
+    if (element.status !== 'OK') {
+        throw new Error(`Traffic Element Error: ${element.status}`);
+    }
+
+    const duration = element.duration.value; // seconds
+    const durationInTraffic = element.duration_in_traffic?.value || duration; // seconds
+    const distanceMeters = element.distance.value;
+
+    // Calculate Congestion Level
+    const congestionFactor = durationInTraffic / duration;
+    let trafficLevel = 'Light';
+    if (congestionFactor > 1.4) trafficLevel = 'Heavy';
+    else if (congestionFactor > 1.15) trafficLevel = 'Moderate';
+
+    return {
+      distance: (distanceMeters / 1000).toFixed(1) + ' km',
+      duration: Math.round(duration / 60) + ' mins',
+      durationInTraffic: Math.round(durationInTraffic / 60) + ' mins',
+      trafficLevel,
+      congestionFactor
+    };
+
+  } catch (error) {
+    console.error("❌ [MAPS SERVICE] Traffic lookup failed:", error.message);
+    return null;
+  }
+};
+
+module.exports = { findNearbyHospitals, getTrafficData };

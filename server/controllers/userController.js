@@ -1,4 +1,5 @@
 const UserModel = require('../models/UserModel');
+const HospitalResourceModel = require('../models/HospitalResourceModel');
 const bcrypt = require('bcryptjs');
 const verifyEmailTemplate = require('../utils/verifyEmailTemplate');
 const sendEmail = require('../config/sendEmail');
@@ -41,6 +42,17 @@ const registerUserController = async (req, res) => {
     });
 
     const save = await newUser.save();
+
+    // Initialize Hospital Resources for new hospital accounts
+    if (role === 'hospital') {
+      const newHospitalResource = new HospitalResourceModel({
+        hospitalName: name, 
+        // Other fields will use the 0/Empty defaults we just set
+      });
+      await newHospitalResource.save();
+      console.log(`[DEMO] Initialized zero-state resources for hospital: ${name}`);
+    }
+
     console.log(`[DEMO] OTP for ${email}: ${otp}`); 
 
     const emailContent = verifyEmailTemplate(name, otp);

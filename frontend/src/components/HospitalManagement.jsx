@@ -5,7 +5,7 @@ import {
   Activity, Bed, Pill, Users, AlertTriangle, CheckCircle,
   Clock, TrendingUp, DollarSign, RefreshCw, ArrowLeft, 
   Heart, Thermometer, Stethoscope, ShieldAlert, Package,
-  ChevronDown, ChevronUp, Edit3, Save, X, CreditCard
+  ChevronDown, ChevronUp, Edit3, Save, X, CreditCard, LogOut
 } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 
@@ -210,6 +210,13 @@ export default function HospitalManagement() {
             <div className="flex items-center gap-2 text-emerald-400"><span className="w-2 h-2 rounded-full bg-emerald-400 animate-pulse" /> MCP Live</div>
             <div className="flex items-center gap-2 text-cyan-300"><span className="w-2 h-2 rounded-full bg-cyan-300" /> {beds.available} Beds Free</div>
             <div className="flex items-center gap-2 text-amber-300"><span className="w-2 h-2 rounded-full bg-amber-300" /> {doctors.filter(d => d.status === 'Available').length} Docs Ready</div>
+            <div className="w-px h-4 bg-slate-700 mx-2" />
+            <button 
+              onClick={() => { localStorage.removeItem('user'); navigate('/login'); }} 
+              className="px-4 py-2 bg-red-500/10 text-red-400 rounded-xl hover:bg-red-500/20 transition-all border border-red-500/20 flex items-center gap-1.5"
+            >
+              <LogOut size={12} /> Logout
+            </button>
           </div>
         </div>
       </header>

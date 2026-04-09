@@ -21,11 +21,11 @@ const hospitalResourceSchema = new mongoose.Schema({
     lng: { type: Number, default: 77.5965 }
   },
   beds: {
-    total: { type: Number, default: 200 },
-    available: { type: Number, default: 42 },
-    icu: { total: { type: Number, default: 30 }, available: { type: Number, default: 8 } },
-    general: { total: { type: Number, default: 120 }, available: { type: Number, default: 25 } },
-    emergency: { total: { type: Number, default: 50 }, available: { type: Number, default: 9 } }
+    total: { type: Number, default: 0 },
+    available: { type: Number, default: 0 },
+    icu: { total: { type: Number, default: 0 }, available: { type: Number, default: 0 } },
+    general: { total: { type: Number, default: 0 }, available: { type: Number, default: 0 } },
+    emergency: { total: { type: Number, default: 0 }, available: { type: Number, default: 0 } }
   },
   medicines: [medicineSchema],
   severityPricing: {
@@ -34,11 +34,11 @@ const hospitalResourceSchema = new mongoose.Schema({
     high: { multiplier: { type: Number, default: 2.5 }, label: { type: String, default: 'Emergency Critical' } }
   },
   basePricing: {
-    consultation: { type: Number, default: 500 },
-    bedPerDay: { type: Number, default: 3000 },
-    icuPerDay: { type: Number, default: 8000 },
-    emergencyFee: { type: Number, default: 2000 },
-    labTests: { type: Number, default: 1500 }
+    consultation: { type: Number, default: 0 },
+    bedPerDay: { type: Number, default: 0 },
+    icuPerDay: { type: Number, default: 0 },
+    emergencyFee: { type: Number, default: 0 },
+    labTests: { type: Number, default: 0 }
   }
 }, {
   timestamps: true

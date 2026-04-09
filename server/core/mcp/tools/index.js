@@ -45,6 +45,16 @@ const initMCPTools = () => {
     description: "Analyzes geographical context, identifies nearest hospitals, and rankings facilities by proximity.",
     execute: spatialNexusAnalysis
   });
+
+  server.registerTool({
+    name: "autonomous_emergency_booking",
+    description: "Executes a high-priority autonomous hospital booking based on severity. Requires context-driven risk validation.",
+    execute: async (context) => {
+      // This tool will be triggered by the orchestrator based on riskLevel
+      const { autonomousBook } = require('../../../controllers/hospitalController');
+      return await autonomousBook(context);
+    }
+  });
 };
 
 module.exports = { initMCPTools };

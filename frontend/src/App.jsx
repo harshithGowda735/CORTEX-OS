@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { io } from 'socket.io-client';
-import { Navigation, Activity, Stethoscope, Search, RefreshCw, Send, LogOut, User as UserIcon, Calendar, Clock, MapPin, CreditCard, Users, HeartPulse, TrendingUp, ShieldAlert, BadgeCheck, AlertCircle } from 'lucide-react';
+import { Navigation, Activity, Stethoscope, Search, RefreshCw, Send, LogOut, User as UserIcon, Calendar, Clock, MapPin, CreditCard, Users, HeartPulse, TrendingUp, ShieldAlert, BadgeCheck, AlertCircle, Zap, Loader2 } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Routes, Route, useNavigate, Navigate } from 'react-router-dom';
 import Register from './components/Auth/Register';
@@ -15,6 +15,7 @@ import VitalsCard from './components/Hospital/VitalsCard';
 import PayFlowCard from './components/Hospital/PayFlowCard';
 import TrafficCard from './components/Hospital/TrafficCard';
 import DoctorCard from './components/Hospital/DoctorCard';
+import BookingInteractionCard from './components/Hospital/BookingInteractionCard';
 
 const SOCKET_URL = import.meta.env.VITE_API_URL || 'http://localhost:5000';
 
@@ -33,6 +34,8 @@ function Dashboard() {
   const [trafficResult, setTrafficResult] = useState(null);
   const [vitalsData, setVitalsData] = useState({ heartRate: 72, bp: '120/80', spo2: 98, temp: 98.6 });
   const [billingData, setBillingData] = useState({ total: 0, breakdown: [], predicted: 0 });
+  const [autoBooking, setAutoBooking] = useState(null);
+  const [suggestion, setSuggestion] = useState(null);
   const [summary, setSummary] = useState('');
   const [isEmergency, setIsEmergency] = useState(false);
   const [userLocation, setUserLocation] = useState(null);
@@ -66,25 +69,31 @@ function Dashboard() {
       }
     });
 
-    // Capture Location
-    if (navigator.geolocation) {
-      navigator.geolocation.getCurrentPosition(
-        (position) => {
-          const { latitude, longitude } = position.coords;
-          setUserLocation({ lat: latitude, lng: longitude });
-          console.log(`📍 Location captured: ${latitude}, ${longitude}`);
-        },
-        (error) => {
-          console.warn("⚠️ Location access denied or failed:", error.message);
-          toast.error("Location access denied. Using default region.");
-        }
-      );
-    }
+    // Capture Location Hook
+    requestLocation();
 
     return () => {
         newSocket.disconnect();
     };
   }, []);
+
+  const requestLocation = () => {
+    if (navigator.geolocation) {
+      toast.loading("Querying GPS constellations...", { id: 'geo', duration: 2000 });
+      navigator.geolocation.getCurrentPosition(
+        (position) => {
+          const { latitude, longitude } = position.coords;
+          setUserLocation({ lat: latitude, lng: longitude });
+          toast.success("Spatial Nexus Linked", { id: 'geo' });
+        },
+        (error) => {
+          console.warn("⚠️ Location error:", error.message);
+          toast.error("GPS Signal Offline. Using default region.", { id: 'geo' });
+        },
+        { enableHighAccuracy: true, timeout: 5000 }
+      );
+    }
+  };
 
   const scrollToBottom = () => {
     setTimeout(() => {
@@ -99,6 +108,8 @@ function Dashboard() {
     setIsProcessing(true);
     setAgentLogs([]);
     setSummary('');
+    setAutoBooking(null);
+    setSuggestion(null);
     setIsEmergency(false);
 
     try {
@@ -122,6 +133,8 @@ function Dashboard() {
         if (results.traffic) setTrafficResult(results.traffic);
         if (results.billing) setBillingData(results.billing);
         if (results.vitals) setVitalsData(results.vitals.current);
+        if (results.autoBooking) setAutoBooking(results.autoBooking);
+        if (results.suggestion) setSuggestion(results.suggestion);
       }
 
       // Auto-switch to healthcare analysis on result
@@ -260,16 +273,31 @@ function Dashboard() {
                     placeholder="E.g., 'I have sharp chest pain, check my bill and find a doctor'" 
                     className="flex-1 px-8 py-5 bg-slate-50 border-2 border-slate-100 rounded-3xl focus:outline-none focus:ring-4 focus:ring-emerald-500/10 focus:border-emerald-500 transition-all text-sm font-bold shadow-inner"
                   />
-                  <motion.button 
-                    whileHover={{ scale: 1.02 }}
-                    whileTap={{ scale: 0.98 }}
-                    type="submit" 
-                    disabled={isProcessing}
-                    className={`px-12 py-5 rounded-3xl font-black text-xs uppercase flex items-center gap-3 transition-all shadow-xl ${isProcessing ? 'bg-slate-400' : 'bg-[#0f172a] text-white hover:bg-emerald-600'}`}
+                  <button
+                    type="button"
+                    onClick={requestLocation}
+                    className={`p-4 rounded-2xl border transition-all ${userLocation ? 'bg-emerald-500/10 border-emerald-500/20 text-emerald-500' : 'bg-slate-100 border-slate-200 text-slate-400 hover:bg-slate-200'}`}
+                    title="Capture Live Location"
                   >
-                    {isProcessing ? <RefreshCw className="animate-spin" size={16} /> : <Activity size={16} />}
-                    {isProcessing ? 'Thinking...' : 'Execute MCP'}
-                  </motion.button>
+                    <MapPin size={24} className={!userLocation ? "animate-pulse" : ""} />
+                  </button>
+                  <button
+                    type="submit"
+                    disabled={isProcessing}
+                    className="flex-1 bg-gradient-to-r from-emerald-500 to-blue-600 hover:from-emerald-600 hover:to-blue-700 text-white p-4 rounded-2xl font-black uppercase tracking-widest text-xs shadow-xl shadow-emerald-500/20 disabled:opacity-50 transition-all flex items-center justify-center gap-2 group"
+                  >
+                    {isProcessing ? (
+                      <div className="flex items-center gap-2">
+                        <Loader2 className="animate-spin" size={18} />
+                        <span>Orchestrating MCP...</span>
+                      </div>
+                    ) : (
+                      <>
+                        <Zap size={18} className="group-hover:scale-125 transition-all" />
+                        <span>Execute Specialized MCP</span>
+                      </>
+                    )}
+                  </button>
                 </form>
 
                 <AnimatePresence>
@@ -296,12 +324,16 @@ function Dashboard() {
                     )}
                 </AnimatePresence>
 
-                {summary && !isEmergency && (
-                  <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="mt-8 p-6 bg-emerald-50/50 text-emerald-950 rounded-2xl border border-emerald-100 text-sm font-bold italic leading-relaxed">
-                    "{summary}"
-                  </motion.div>
-                )}
             </div>
+          </div>
+
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
+            <BookingInteractionCard autoBooking={autoBooking} suggestion={suggestion} />
+            {summary && !isEmergency && (
+              <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="p-8 bg-emerald-50/50 text-emerald-950 rounded-[2rem] border border-emerald-100 text-sm font-bold italic leading-relaxed h-full flex items-center">
+                "{summary}"
+              </motion.div>
+            )}
           </div>
 
           <div className="grid grid-cols-2 md:grid-cols-4 gap-4">

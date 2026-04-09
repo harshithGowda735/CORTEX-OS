@@ -111,54 +111,44 @@ const processQuery = async (query, userId = 'default_user', io, location) => {
   // 🔥 PARALLEL EXECUTION (TRUE MCP)
   await Promise.all(agentTasks);
 
-  // 🔥 5. AUTONOMOUS BOOKING (MODULE 12)
+  // 🔥 5. CONTEXTUAL DISPATCH (ACTION vs ADVICE)
   const healthResult = context.results.healthcare;
-  const opsResult = context.results.operations;
   const logisticsResult = context.results.logistics;
+  
+  if (healthResult) {
+    const severity = healthResult.riskLevel;
+    const isEmergency = severity === 'High' || severity === 'Moderate';
 
-  if (healthResult && (healthResult.riskLevel === 'High' || healthResult.riskLevel === 'Moderate')) {
-    const targetHospital = logisticsResult?.nearest?.name || 'CORTEX City Care Hospital';
-
-    emitAgentActivity(userId, {
-      agent: 'Auto-Booking',
-      message: `${healthResult.riskLevel} risk detected. Routing to nearest facility: ${targetHospital}...`,
-      status: 'active',
-      timestamp: new Date()
-    });
-
-    try {
-      const bookingResult = await autonomousBook({
-        userId: userId === 'demo_user' ? '69d63cad259998ad67ae6286' : userId,
-        department: opsResult?.assignedSpecialization || 'General Consultation',
-        severity: healthResult.riskLevel,
-        doctorId: opsResult?.assignedDoctorId || null,
-        targetHospital, // Now location-aware
-        reason: `Auto-booked: ${healthResult.assessment}`
-      });
-
-      context.results.autoBooking = bookingResult;
-
+    if (isEmergency) {
+      // CASE A: HIGH/MODERATE SEVERITY -> AUTONOMOUS ACTION (MCP)
       emitAgentActivity(userId, {
-        agent: 'Auto-Booking',
-        message: bookingResult.message || 'Booking completed.',
-        status: 'success',
-        timestamp: new Date()
+        agent: 'MCP Dispatcher',
+        message: `🚨 Emergency Protocol: Severity ${severity} detected.`,
+        status: 'active'
       });
 
-      if (io) {
-        io.emit('hospital-update', {
-          type: 'auto-booking',
-          data: bookingResult
+      try {
+        const bookingResult = await server.callTool("autonomous_emergency_booking", {
+          userId: userId === 'demo_user' ? '69d63cad259998ad67ae6286' : userId,
+          department: context.results.operations?.assignedSpecialization || 'Emergency Care',
+          severity: severity,
+          targetHospital: logisticsResult?.nearest?.name || 'CORTEX Hospital',
+          reason: `Autonomous MCP Booking: ${healthResult.assessment}`
         });
+
+        context.results.autoBooking = bookingResult;
+        emitAgentActivity(userId, { agent: 'MCP Dispatcher', message: `✅ Admission Secured: ${bookingResult.message}`, status: 'success' });
+      } catch (error) {
+        console.error('❌ MCP Action Tool Failed:', error.message);
       }
-    } catch (error) {
-      console.error('❌ [AUTO-BOOKING] Failed:', error.message);
-      emitAgentActivity(userId, {
-        agent: 'Auto-Booking',
-        message: `Booking failed: ${error.message}`,
-        status: 'error',
-        timestamp: new Date()
-      });
+    } else {
+      // CASE B: LOW SEVERITY -> SUGGESTIVE ADVICE
+      context.results.suggestion = {
+        type: 'manual_appointment',
+        message: "Your condition is currently stable. I recommend a routine checkup. You can book an appointment here.",
+        canBookManual: true
+      };
+      emitAgentActivity(userId, { agent: 'MCP Dispatcher', message: "Stable condition detected. Suggesting manual appointment.", status: 'done' });
     }
   }
 

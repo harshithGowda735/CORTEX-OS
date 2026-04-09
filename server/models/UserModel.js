@@ -55,7 +55,7 @@ const userSchema = new mongoose.Schema({
   },
   walletBalance: {
     type: Number,
-    default: 50000, // Demo credits
+    default: 0, // Reset to zero for hackathon start
   },
   transactions: [{
     type: mongoose.Schema.ObjectId,

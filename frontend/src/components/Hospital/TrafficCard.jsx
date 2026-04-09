@@ -29,34 +29,30 @@ const TrafficCard = ({ data }) => {
       <div className="space-y-6">
         <div className="grid grid-cols-2 gap-4">
           <div className="p-4 bg-slate-50 rounded-2xl border border-slate-100">
-            <p className="text-[10px] uppercase font-bold text-slate-400 mb-1">Destination</p>
-            <p className="text-sm font-black text-slate-800">{data.hospital || "City Care Hospital"}</p>
+            <p className="text-[10px] uppercase font-bold text-slate-400 mb-1">Live Distance</p>
+            <p className="text-sm font-black text-slate-800">{data.distance || "5.2 km"}</p>
           </div>
           <div className="p-4 bg-slate-50 rounded-2xl border border-slate-100">
-            <p className="text-[10px] uppercase font-bold text-slate-400 mb-1">ETA</p>
-            <p className="text-sm font-black text-orange-600">{data.eta || "12 mins"}</p>
+            <p className="text-[10px] uppercase font-bold text-slate-400 mb-1">Traffic Status</p>
+            <p className="text-sm font-black text-emerald-600">{data.traffic || "Standard"}</p>
           </div>
         </div>
 
         <div className="relative h-2 bg-slate-100 rounded-full overflow-hidden">
           <motion.div 
             initial={{ width: 0 }}
-            animate={{ width: '100%' }}
+            animate={{ width: isHeavy ? '100%' : '60%' }}
             transition={{ duration: 10, repeat: Infinity }}
-            className="absolute top-0 left-0 h-full bg-gradient-to-r from-orange-500 to-red-500"
+            className={`absolute top-0 left-0 h-full bg-gradient-to-r ${isHeavy ? 'from-red-500 to-red-600' : 'from-emerald-500 to-blue-500'}`}
           />
         </div>
 
-        <div className="p-4 bg-orange-50 rounded-2xl border border-orange-100 border-dashed">
-          <div className="flex items-center gap-3">
-             <div className="p-2 bg-white rounded-lg shadow-sm">
-                <MapPin size={16} className="text-orange-500" />
-             </div>
-             <div>
-                <p className="text-[10px] font-bold text-orange-700 uppercase">Alternate Route</p>
-                <p className="text-xs font-bold text-orange-950">Emergency Skyway Available</p>
-             </div>
-          </div>
+        <div className="flex justify-between items-center opacity-40">
+           <div className="flex items-center gap-2">
+              <MapPin size={10} />
+              <span className="text-[8px] font-black uppercase tracking-[0.2em]">{data.source || 'Autonomous Predictor'}</span>
+           </div>
+           <span className="text-[8px] font-black uppercase tracking-[0.2em]">CORTEX-OS NEXUS</span>
         </div>
       </div>
     </motion.div>

@@ -5,7 +5,7 @@
 
 const callAI = async (messages, options = {}) => {
   const apiKey = process.env.OPENROUTER_API_KEY;
-  const model = process.env.OPENROUTER_MODEL || "google/gemma-3-27b-it:free";
+  const model = options.model || process.env.OPENROUTER_MODEL || "google/gemma-3-27b-it:free";
 
   if (!apiKey) {
     throw new Error("OPENROUTER_API_KEY is missing in .env");

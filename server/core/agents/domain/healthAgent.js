@@ -1,46 +1,88 @@
 const { emitAgentActivity } = require('../../socket/socketHandler');
+const { callAI } = require('../../ai/openRouterService');
 
 const analyzeHealth = async (context) => {
-  const { query, userId } = context;
-  emitAgentActivity(userId, { agent: 'Healthcare Agent', message: 'Scanning symptom database...', status: 'thinking' });
-  
-  await new Promise(resolve => setTimeout(resolve, 1500));
+  const { query, userId, results } = context;
+  const facility = results.logistics?.nearest?.name || "CORTEX City Care Hospital";
 
-  let response = {
-    domain: 'Healthcare',
-    assessment: '',
-    riskLevel: 'Low',
-    riskProbability: '5%',
-    marker: 'Routine',
-    nextSteps: []
-  };
+  emitAgentActivity(userId, { 
+    agent: 'Healthcare Agent', 
+    message: 'Analyzing symptoms using deep clinical reasoning...', 
+    status: 'thinking' 
+  });
 
-  const lowerQuery = query.toLowerCase();
+  const systemPrompt = `You are the CORTEX-OS Healthcare Triage Agent.
+Your job is to analyze the user's medical query and provide a structured JSON assessment.
 
-  const logistics = context.results.logistics;
-  const facility = logistics?.nearest?.name || "City Care Hospital";
+You MUST respond with ONLY a raw JSON object (no markdown, no backticks).
+Include the following keys:
+- "assessment": A short, clinical summary of the suspected condition.
+- "riskLevel": Must be exactly "Low", "Moderate", or "High". Be highly sensitive to chest pain, sudden numbness, or severe trauma (High).
+- "riskProbability": A percentage string (e.g., "85%").
+- "marker": A one-word severity marker (e.g., "Emergency", "Urgent", "Routine").
+- "nextSteps": An array of 2-3 short strings with immediate medical advice.
 
-  if (lowerQuery.includes('pain') && lowerQuery.includes('chest')) {
-    response.assessment = `Acute thoracic distress reported. Risk protocol initiated for ${facility}.`;
-    response.riskLevel = 'High';
-    response.riskProbability = '88%';
-    response.marker = 'Emergency';
-    response.nextSteps = [`Immediate clinical triage at ${facility}`, "Administer ASA if appropriate", "Continuous vitals profiling"];
-  } else if (lowerQuery.includes('fever') || lowerQuery.includes('cold')) {
-    response.assessment = `Viral infection suspected. Standard protocol active for ${facility}.`;
-    response.riskLevel = 'Moderate';
-    response.riskProbability = '25%';
-    response.marker = 'Urgent';
-    response.nextSteps = [`Consultation at ${facility} within 24h`, "Temp monitoring", "Hydration protocol"];
-  } else {
-    response.assessment = `Wellness check complete. Reference center: ${facility}.`;
-    response.riskLevel = 'Low';
-    response.nextSteps = ["Annual physical exam", "Standard biometric tracking"];
+The target facility for triage is: ${facility}
+
+User Query: "${query}"`;
+
+  try {
+    const aiResponse = await callAI(
+      [ { role: "system", content: systemPrompt } ],
+      { model: "google/gemma-3-27b-it:free" } // MCP Feature: Model Heterogeneity
+    );
+
+    // Parse the JSON output from the LLM
+    let parsedResponse;
+    try {
+      // aggressively strip any potential markdown block markers
+      const cleanJSON = aiResponse.replace(/```json/gi, '').replace(/```/g, '').trim();
+      parsedResponse = JSON.parse(cleanJSON);
+    } catch (parseError) {
+      console.warn("⚠️ Healthcare Agent failed to parse JSON, falling back to heuristics.", parseError);
+      throw new Error("JSON Parse failure");
+    }
+
+    const response = {
+      domain: 'Healthcare',
+      ...parsedResponse
+    };
+
+    emitAgentActivity(userId, { 
+      agent: 'Healthcare Agent', 
+      message: `Clinical assessment completed. Risk: ${response.riskLevel}`, 
+      status: 'done' 
+    });
+
+    context.results.healthcare = response;
+    return response;
+
+  } catch (error) {
+    // Fail-safe heuristic fallback for demo stability
+    const lowerQuery = query.toLowerCase();
+    let response = {
+      domain: 'Healthcare',
+      assessment: `Condition analysis for ${facility}.`,
+      riskLevel: 'Low',
+      riskProbability: '10%',
+      marker: 'Routine',
+      nextSteps: ["Monitor symptoms", "Consult if worsened"]
+    };
+
+    if (lowerQuery.includes('pain') || lowerQuery.includes('severe')) {
+        response.riskLevel = 'High';
+        response.assessment = 'Potential acute condition. Emergency protocols advised.';
+    }
+
+    emitAgentActivity(userId, { 
+      agent: 'Healthcare Agent', 
+      message: 'Heuristic assessment deployed due to LLM timeout.', 
+      status: 'warning' 
+    });
+    
+    context.results.healthcare = response;
+    return response;
   }
-
-  emitAgentActivity(userId, { agent: 'Healthcare Agent', message: `Clinical assessment synced with ${facility}.`, status: 'done' });
-  context.results.healthcare = response;
-  return response;
 };
 
 module.exports = { analyzeHealth };
