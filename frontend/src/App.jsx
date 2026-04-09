@@ -40,7 +40,7 @@ function Dashboard() {
   useEffect(() => {
     // Role-Guard: If role is hospital, push to management
     if (user?.role === 'hospital') {
-      window.location.href = '/management';
+      navigate('/management', { replace: true });
       return;
     }
 

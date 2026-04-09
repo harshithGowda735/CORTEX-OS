@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import axios from 'axios';
 import toast from 'react-hot-toast';
-import { useNavigate, Link } from 'react-router-dom';
+import { useNavigate, Link, Navigate } from 'react-router-dom';
 import { Mail, Lock, Loader2, LogIn } from 'lucide-react';
 
 const Login = () => {
@@ -12,6 +12,12 @@ const Login = () => {
     });
     const [loading, setLoading] = useState(false);
     const navigate = useNavigate();
+
+    // Prevent logged-in users from seeing the login page
+    const user = JSON.parse(localStorage.getItem('user'));
+    if (user) {
+        return <Navigate to={user.role === 'hospital' ? '/management' : '/'} replace />;
+    }
 
     const handleChange = (e) => {
         const { name, value } = e.target;
@@ -42,11 +48,11 @@ const Login = () => {
                 localStorage.setItem('user', JSON.stringify(userData));
                 toast.success("Welcome back, " + userData.name);
                 
-                // Role-based redirection with full state refresh
+                // Role-based redirection using navigate
                 if (userData.role === 'hospital') {
-                    window.location.href = '/management';
+                    navigate('/management', { replace: true });
                 } else {
-                    window.location.href = '/';
+                    navigate('/', { replace: true });
                 }
             }
         } catch (error) {

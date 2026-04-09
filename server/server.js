@@ -25,7 +25,7 @@ setupSocketHandlers(io);
 
 // Health check
 app.get('/api/health', (req, res) => {
-  res.json({ status: 'OK', message: 'AgriHealthTraffic MCP Backend is running' });
+  res.json({ status: 'OK', message: 'CORTEX-OS MCP Backend is running' });
 });
 
 // Chat Endpoint

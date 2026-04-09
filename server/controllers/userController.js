@@ -46,7 +46,7 @@ const registerUserController = async (req, res) => {
     const emailContent = verifyEmailTemplate(name, otp);
     await sendEmail({
       to: email,
-      subject: 'Verify your AgriHealthTraffic Account',
+      subject: 'Verify your CORTEX-OS Account',
       html: emailContent,
     });
 
@@ -245,7 +245,7 @@ const resendOtpController = async (req, res) => {
         const emailContent = verifyEmailTemplate(user.name, otp);
         await sendEmail({
             to: email,
-            subject: 'Verify your AgriHealthTraffic Account',
+            subject: 'Verify your CORTEX-OS Account',
             html: emailContent,
         });
 

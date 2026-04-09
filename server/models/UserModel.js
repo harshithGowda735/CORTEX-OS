@@ -53,6 +53,14 @@ const userSchema = new mongoose.Schema({
     enum: ['active', 'inactive', 'suspended'],
     default: 'active',
   },
+  walletBalance: {
+    type: Number,
+    default: 50000, // Demo credits
+  },
+  transactions: [{
+    type: mongoose.Schema.ObjectId,
+    ref: 'Transaction'
+  }],
 }, {
   timestamps: true,
 });

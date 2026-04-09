@@ -17,6 +17,7 @@ export default function HospitalManagement() {
   const [hospital, setHospital] = useState(null);
   const [doctors, setDoctors] = useState([]);
   const [bookings, setBookings] = useState([]);
+  const [transactions, setTransactions] = useState([]);
   const [loading, setLoading] = useState(true);
   const [activeSection, setActiveSection] = useState('overview');
   const [socket, setSocket] = useState(null);
@@ -31,6 +32,7 @@ export default function HospitalManagement() {
         setHospital(json.data.hospital);
         setDoctors(json.data.doctors);
         setBookings(json.data.recentBookings);
+        setTransactions(json.data.transactions || []);
       }
     } catch (err) {
       console.error('Dashboard fetch error:', err);
@@ -43,7 +45,7 @@ export default function HospitalManagement() {
     // Role-Guard: If role is patient, push to dashboard
     const user = JSON.parse(localStorage.getItem('user'));
     if (user?.role === 'patient') {
-      window.location.href = '/';
+      navigate('/', { replace: true });
       return;
     }
 
@@ -570,27 +572,54 @@ export default function HospitalManagement() {
 
                 <div className="grid grid-cols-1 lg:grid-cols-4 gap-6 mb-8">
                   <StatCard 
-                    label="Total Generated" 
-                    value={`₹${(bookings.length * 4500).toLocaleString()}`} 
-                    sub="Severity Adjusted" 
+                    label="Total Revenue" 
+                    value={`₹${(transactions?.reduce((sum, t) => sum + (t.split?.hospital || 0), 0) || 0).toLocaleString()}`} 
+                    sub="Hospital Net Share" 
                     color="emerald" 
                     icon={<TrendingUp size={24} />} 
                   />
                    <StatCard 
-                    label="Avg. Case Value" 
-                    value="₹5,200" 
-                    sub="Autonomous Billing" 
+                    label="Autonomous Volume" 
+                    value={transactions?.length || 0} 
+                    sub="AI Managed Payments" 
                     color="blue" 
                     icon={<CreditCard size={24} />} 
                   />
                   <div className="lg:col-span-2 bg-gradient-to-br from-[#1e293b] to-[#0f172a] rounded-2xl p-6 text-white shadow-xl flex items-center justify-between">
                     <div>
-                      <p className="text-[10px] uppercase tracking-widest text-emerald-400 font-bold">Dynamic Multiplier Status</p>
-                      <h3 className="text-2xl font-black mt-1">AI-Managed Pricing Active</h3>
+                      <p className="text-[10px] uppercase tracking-widest text-emerald-400 font-bold">PayFlow Reconciliation</p>
+                      <h3 className="text-2xl font-black mt-1">Autonomous Settlement Sync</h3>
                     </div>
                     <div className="p-4 bg-white/10 rounded-2xl border border-white/10">
-                      <TrendingUp className="text-emerald-400" />
+                      <ShieldAlert className="text-emerald-400" />
                     </div>
+                  </div>
+                </div>
+
+                {/* TRANSACTION LEDGER */}
+                <div className="bg-white rounded-2xl border border-slate-200 p-6 shadow-lg mb-8">
+                  <h3 className="text-sm font-black uppercase tracking-widest text-emerald-600 mb-6">Autonomous Transaction Ledger</h3>
+                  <div className="space-y-4">
+                    {transactions?.map((t, i) => (
+                      <div key={i} className="flex items-center justify-between p-4 bg-slate-50 rounded-xl border border-slate-100">
+                        <div className="flex items-center gap-4">
+                          <div className="p-2 bg-emerald-100 text-emerald-600 rounded-lg">
+                            <DollarSign size={18} />
+                          </div>
+                          <div>
+                            <p className="text-sm font-bold text-slate-800">{t.user?.name || 'Patient'} - {t.type}</p>
+                            <p className="text-[10px] text-slate-500">ID: {t.receiptId} • {new Date(t.createdAt).toLocaleString()}</p>
+                          </div>
+                        </div>
+                        <div className="text-right">
+                          <p className="text-sm font-black text-slate-800">₹{t.amount.toLocaleString()}</p>
+                          <p className="text-[9px] text-emerald-500 font-bold uppercase tracking-wider">Hospital Share: ₹{t.split?.hospital?.toLocaleString()}</p>
+                        </div>
+                      </div>
+                    ))}
+                    {(!transactions || transactions.length === 0) && (
+                      <p className="text-center py-8 text-slate-400 text-sm italic">No autonomous transactions recorded yet.</p>
+                    )}
                   </div>
                 </div>
 
@@ -618,24 +647,6 @@ export default function HospitalManagement() {
                       <p className="text-xs text-slate-500 mt-2 capitalize">{key} severity multiplier</p>
                     </div>
                   ))}
-                </div>
-
-                <div className="bg-white rounded-2xl border border-slate-200 p-6 shadow-lg">
-                  <h3 className="text-sm font-black uppercase tracking-widest text-emerald-600 mb-6">Base Cost Breakdown (Manual Adjust)</h3>
-                  <div className="grid grid-cols-2 lg:grid-cols-5 gap-4">
-                    {hospital?.basePricing && Object.entries(hospital.basePricing).map(([key, val]) => (
-                      <div key={key} className="bg-slate-50 rounded-xl p-4 border border-slate-100 group relative">
-                        <p className="text-[10px] text-slate-500 uppercase font-black">{key.replace(/([A-Z])/g, ' $1')}</p>
-                        <p className="text-xl font-black text-slate-800 mt-1">₹{val.toLocaleString()}</p>
-                        <button 
-                           onClick={() => handlePricingUpdate({ basePricing: { ...hospital.basePricing, [key]: val + 100 } })}
-                           className="absolute top-2 right-2 opacity-0 group-hover:opacity-100 p-1 bg-emerald-500 text-white rounded transition-opacity"
-                        >
-                          <ChevronUp size={12} />
-                        </button>
-                      </div>
-                    ))}
-                  </div>
                 </div>
               </motion.div>
             )}

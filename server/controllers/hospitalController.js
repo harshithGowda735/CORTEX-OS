@@ -1,6 +1,7 @@
 const HospitalResourceModel = require('../models/HospitalResourceModel');
 const DoctorModel = require('../models/DoctorModel');
 const BookingModel = require('../models/BookingModel');
+const TransactionModel = require('../models/TransactionModel');
 
 // GET full hospital dashboard data
 const getHospitalDashboard = async (req, res) => {
@@ -12,9 +13,14 @@ const getHospitalDashboard = async (req, res) => {
       .limit(20)
       .populate('user', 'name email');
 
+    const transactions = await TransactionModel.find()
+      .sort({ createdAt: -1 })
+      .limit(50)
+      .populate('user', 'name');
+
     return res.json({
       success: true,
-      data: { hospital, doctors, recentBookings }
+      data: { hospital, doctors, recentBookings, transactions }
     });
   } catch (error) {
     return res.status(500).json({ success: false, message: error.message });

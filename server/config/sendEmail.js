@@ -6,7 +6,7 @@ async function sendEmail({ to, subject, html }) {
     const resend = new Resend(process.env.RESEND_API_KEY);
 
     const { data, error } = await resend.emails.send({
-      from: 'onboarding@resend.dev',
+      from: 'CORTEX-OS <onboarding@resend.dev>',
       to: [to],
       subject: subject,
       html: html,

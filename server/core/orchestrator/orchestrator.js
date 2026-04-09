@@ -79,7 +79,16 @@ const processQuery = async (query, userId = 'default_user', io, location) => {
     });
 
     try {
-      const result = await server.callTool(toolName, context);
+      // Special Logic for PayFlow: Real-time Autonomous Settlement
+      let result;
+      if (domain === 'billing') {
+        const healthRisk = context.results.healthcare?.riskLevel;
+        const autoExecute = healthRisk === 'High' || healthRisk === 'Moderate' || query.toLowerCase().includes('pay') || query.toLowerCase().includes('book');
+        result = await server.callTool(toolName, context, autoExecute);
+      } else {
+        result = await server.callTool(toolName, context);
+      }
+
       context.results[domain] = result;
 
       emitAgentActivity(userId, {
