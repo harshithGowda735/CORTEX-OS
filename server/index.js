@@ -33,18 +33,39 @@ const app = express();
 const server = http.createServer(app);
 const io = new Server(server, {
   cors: {
-    origin: process.env.FRONTEND_URL || "*",
+    origin: (origin, callback) => {
+        if (!origin || ALLOWED_ORIGINS.indexOf(origin) !== -1 || origin.endsWith(".vercel.app")) {
+          callback(null, true);
+        } else {
+          callback(new Error('Not allowed by CORS'));
+        }
+    },
     methods: ["GET", "POST"],
     credentials: true
   }
 });
 
 // Middleware
+const ALLOWED_ORIGINS = [
+  process.env.FRONTEND_URL,
+  "https://cortex-os-blond.vercel.app",
+  "https://cortex-os-git-main-harshithgowdags96-1787s-projects.vercel.app",
+  "http://localhost:5173"
+];
+
 app.use(helmet({
     crossOriginResourcePolicy : false
 }));
 app.use(cors({
-    origin: process.env.FRONTEND_URL || "*",
+    origin: (origin, callback) => {
+        // Allow requests with no origin (like mobile apps or curl)
+        if (!origin) return callback(null, true);
+        if (ALLOWED_ORIGINS.indexOf(origin) !== -1 || origin.endsWith(".vercel.app")) {
+          callback(null, true);
+        } else {
+          callback(new Error('Not allowed by CORS'));
+        }
+    },
     credentials: true
 }));
 app.use(express.json());
