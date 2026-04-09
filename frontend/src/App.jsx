@@ -68,23 +68,10 @@ function Dashboard({ user, userLocation }) {
       }
     });
 
-    // Capture Location Hook
-    requestLocation();
 
     return () => {
         newSocket.disconnect();
     };
-  }, []);
-
-  // Capture Location Hook
-  useEffect(() => {
-    if (navigator.geolocation) {
-      navigator.geolocation.getCurrentPosition(
-        (position) => setUserLocation({ lat: position.coords.latitude, lng: position.coords.longitude }),
-        () => setUserLocation({ lat: 12.8914, lng: 77.5965 }),
-        { timeout: 10000 }
-      );
-    }
   }, []);
 
   const scrollToBottom = () => {
@@ -266,14 +253,6 @@ function Dashboard({ user, userLocation }) {
                     className="flex-1 px-8 py-5 bg-slate-50 border-2 border-slate-100 rounded-3xl focus:outline-none focus:ring-4 focus:ring-emerald-500/10 focus:border-emerald-500 transition-all text-sm font-bold shadow-inner"
                   />
                   <button
-                    type="button"
-                    onClick={requestLocation}
-                    className={`p-4 rounded-2xl border transition-all ${userLocation ? 'bg-emerald-500/10 border-emerald-500/20 text-emerald-500' : 'bg-slate-100 border-slate-200 text-slate-400 hover:bg-slate-200'}`}
-                    title="Capture Live Location"
-                  >
-                    <MapPin size={24} className={!userLocation ? "animate-pulse" : ""} />
-                  </button>
-                  <button
                     type="submit"
                     disabled={isProcessing}
                     className="flex-1 bg-gradient-to-r from-emerald-500 to-blue-600 hover:from-emerald-600 hover:to-blue-700 text-white p-4 rounded-2xl font-black uppercase tracking-widest text-xs shadow-xl shadow-emerald-500/20 disabled:opacity-50 transition-all flex items-center justify-center gap-2 group"
@@ -392,7 +371,7 @@ function App() {
     <>
       <Routes>
         <Route path="/register" element={<Register />} />
-        <Route path="/login" element={<Login />} />
+        <Route path="/login" element={<Login onLogin={(u) => setUser(u)} />} />
         <Route path="/verify-email" element={<VerifyEmail />} />
         <Route path="/management" element={<ProtectedRoute><HospitalManagement user={user} /></ProtectedRoute>} />
         <Route path="/" element={<ProtectedRoute><Dashboard user={user} userLocation={userLocation} /></ProtectedRoute>} />

@@ -75,6 +75,11 @@ const triggerSOS = async (req, res) => {
 const addEmergencyContact = async (req, res) => {
     try {
         const { userId, name, email, phone } = req.body;
+        
+        if (!userId) {
+            return res.status(400).json({ success: false, message: 'Identity missing. Please re-authenticate.' });
+        }
+
         const user = await UserModel.findByIdAndUpdate(
             userId,
             { $push: { emergencyContacts: { name, email, phone } } },

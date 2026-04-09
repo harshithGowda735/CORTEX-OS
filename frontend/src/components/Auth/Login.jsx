@@ -46,6 +46,7 @@ const Login = () => {
                 }
 
                 localStorage.setItem('user', JSON.stringify(userData));
+                if (typeof onLogin === 'function') onLogin(userData);
                 toast.success("Welcome back, " + userData.name);
                 
                 // Role-based redirection using navigate
