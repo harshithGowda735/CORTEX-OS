@@ -29,6 +29,7 @@ const CountUp = ({ to, duration = 1 }) => {
 };
 
 const PayFlowCard = ({ data }) => {
+  if (!data) return null;
   return (
     <motion.div 
       initial={{ opacity: 0, scale: 0.95 }}

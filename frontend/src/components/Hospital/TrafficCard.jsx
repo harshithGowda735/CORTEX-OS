@@ -3,6 +3,7 @@ import { motion } from 'framer-motion';
 import { MapPin, Clock, AlertTriangle, Navigation } from 'lucide-react';
 
 const TrafficCard = ({ data }) => {
+  if (!data) return null; // Defensive check for MCP orchestration lag
   const isHeavy = data.traffic === 'Heavy';
 
   return (

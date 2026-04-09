@@ -44,7 +44,7 @@ const Register = () => {
             <div className="w-full max-w-md bg-[#1e293b] rounded-2xl p-8 border border-[#334155] shadow-2xl">
                 <div className="text-center mb-10">
                     <h1 className="text-3xl font-bold bg-gradient-to-r from-[#10b981] to-[#3b82f6] bg-clip-text text-transparent">
-                        AgriHealthTraffic
+                        CORTEX-OS
                     </h1>
                     <p className="text-[#94a3b8] mt-2">Join the future of MCP Intelligence</p>
                 </div>
