@@ -21,8 +21,12 @@ const DoctorCard = ({ doctors }) => {
           >
             <div className="flex items-center gap-4">
                 <div className="relative">
-                    <div className="w-12 h-12 bg-white rounded-xl shadow-sm flex items-center justify-center font-bold text-indigo-600 border border-slate-100 uppercase">
-                        {dr.name.split(' ')[1][0]}
+                    <div className="w-12 h-12 bg-white rounded-xl shadow-sm flex items-center justify-center text-xl border border-slate-100 uppercase">
+                        {dr.spec.includes('Cardiology') ? '❤️' : 
+                         dr.spec.includes('Pediatrics') ? '👶' : 
+                         dr.spec.includes('Orthopedics') ? '🦴' :
+                         dr.spec.includes('Neurology') ? '🧠' :
+                         dr.spec.includes('Surgery') ? '🏥' : '🩺'}
                     </div>
                     {dr.status === 'Available' && (
                         <div className="absolute -top-1 -right-1 w-4 h-4 bg-emerald-500 rounded-full border-2 border-slate-50 flex items-center justify-center">

@@ -450,17 +450,27 @@ export default function HospitalManagement() {
                   </button>
                 </div>
                 <div className="grid grid-cols-2 gap-6">
-                  {doctors.map(doc => (
-                    <div key={doc._id} className="bg-white rounded-2xl border border-slate-200 p-6 flex items-start gap-4 shadow-lg hover:border-emerald-500/30 transition-all">
-                      <img 
-                        src={doc.profileImage || `https://ui-avatars.com/api/?name=${doc.name}&background=10b981&color=fff`} 
-                        alt={doc.name}
-                        className="w-16 h-16 rounded-2xl object-cover border-2 border-slate-100 shadow-sm"
-                      />
-                      <div className="flex-1">
-                        <h3 className="text-base font-black text-slate-800">{doc.name}</h3>
-                        <p className="text-[10px] font-bold text-emerald-600 uppercase tracking-tighter">{doc.specialization} · {doc.qualification || 'MBBS, MD'}</p>
-                        <p className="text-[10px] text-slate-500 mt-1">{doc.experience} Years Field Experience</p>
+                  {doctors.map(doc => {
+                    const specEmojiMap = {
+                      'Cardiology': '❤️',
+                      'Pediatrics': '👶',
+                      'Orthopedics': '🦴',
+                      'Dermatology': '✨',
+                      'Neurology': '🧠',
+                      'Surgery': '🏥',
+                      'General Consultation': '🩺'
+                    };
+                    const emoji = specEmojiMap[doc.specialization] || '🩺';
+                    
+                    return (
+                      <div key={doc._id} className="bg-white rounded-2xl border border-slate-200 p-6 flex items-start gap-4 shadow-lg hover:border-emerald-500/30 transition-all">
+                        <div className="w-16 h-16 rounded-2xl bg-slate-50 border-2 border-slate-100 shadow-sm flex items-center justify-center text-3xl">
+                          {emoji}
+                        </div>
+                        <div className="flex-1">
+                          <h3 className="text-base font-black text-slate-800">{doc.name}</h3>
+                          <p className="text-[10px] font-bold text-emerald-600 uppercase tracking-tighter">{doc.specialization} · {doc.qualification || 'MBBS, MD'}</p>
+                          <p className="text-[10px] text-slate-500 mt-1">{doc.experience} Years Field Experience</p>
                         <p className="text-[9px] text-slate-400 font-mono mt-1">{doc.email}</p>
                         <div className="flex items-center gap-3 mt-3 text-[8px] font-black uppercase tracking-widest text-slate-400">
                            <span className="flex items-center gap-1"><Clock size={10}/> {doc.shift?.start} - {doc.shift?.end}</span>

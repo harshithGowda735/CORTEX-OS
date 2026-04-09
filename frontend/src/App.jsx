@@ -78,24 +78,16 @@ function Dashboard() {
     };
   }, []);
 
-  const requestLocation = () => {
+  // Capture Location Hook
+  useEffect(() => {
     if (navigator.geolocation) {
-      toast.loading("Querying GPS constellations...", { id: 'geo', duration: 2000 });
       navigator.geolocation.getCurrentPosition(
-        (position) => {
-          const { latitude, longitude } = position.coords;
-          setUserLocation({ lat: latitude, lng: longitude });
-          toast.success("Spatial Nexus Linked", { id: 'geo' });
-        },
-        (error) => {
-          console.warn("⚠️ Location error:", error.message);
-          toast.success("Regional Nexus Linked (Fallback)", { id: 'geo' });
-          setUserLocation({ lat: 12.8914, lng: 77.5965 }); // Default Hackathon Coordinate
-        },
-        { enableHighAccuracy: false, timeout: 10000, maximumAge: 60000 }
+        (position) => setUserLocation({ lat: position.coords.latitude, lng: position.coords.longitude }),
+        () => setUserLocation({ lat: 12.8914, lng: 77.5965 }),
+        { timeout: 10000 }
       );
     }
-  };
+  }, []);
 
   const scrollToBottom = () => {
     setTimeout(() => {
@@ -372,8 +364,6 @@ function Dashboard() {
           </div>
         </section>
       </main>
-
-      <CortexAssistant user={user} location={userLocation} />
     </div>
   );
 }
@@ -387,14 +377,30 @@ function ProtectedRoute({ children }) {
 }
 
 function App() {
+  const [user, setUser] = useState(JSON.parse(localStorage.getItem('user')));
+  const [userLocation, setUserLocation] = useState(null);
+
+  useEffect(() => {
+    if (navigator.geolocation) {
+      navigator.geolocation.getCurrentPosition(
+        (position) => setUserLocation({ lat: position.coords.latitude, lng: position.coords.longitude }),
+        () => setUserLocation({ lat: 12.8914, lng: 77.5965 }),
+        { timeout: 10000 }
+      );
+    }
+  }, []);
+
   return (
-    <Routes>
-      <Route path="/register" element={<Register />} />
-      <Route path="/login" element={<Login />} />
-      <Route path="/verify-email" element={<VerifyEmail />} />
-      <Route path="/management" element={<ProtectedRoute><HospitalManagement /></ProtectedRoute>} />
-      <Route path="/" element={<ProtectedRoute><Dashboard /></ProtectedRoute>} />
-    </Routes>
+    <>
+      <Routes>
+        <Route path="/register" element={<Register />} />
+        <Route path="/login" element={<Login />} />
+        <Route path="/verify-email" element={<VerifyEmail />} />
+        <Route path="/management" element={<ProtectedRoute><HospitalManagement /></ProtectedRoute>} />
+        <Route path="/" element={<ProtectedRoute><Dashboard /></ProtectedRoute>} />
+      </Routes>
+      <CortexAssistant user={user} location={userLocation} />
+    </>
   );
 }
 
