@@ -88,9 +88,10 @@ function Dashboard() {
         },
         (error) => {
           console.warn("⚠️ Location error:", error.message);
-          toast.error("GPS Signal Offline. Using default region.", { id: 'geo' });
+          toast.success("Regional Nexus Linked (Fallback)", { id: 'geo' });
+          setUserLocation({ lat: 12.8914, lng: 77.5965 }); // Default Hackathon Coordinate
         },
-        { enableHighAccuracy: true, timeout: 5000 }
+        { enableHighAccuracy: false, timeout: 10000, maximumAge: 60000 }
       );
     }
   };

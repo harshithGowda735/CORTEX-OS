@@ -30,3 +30,6 @@ services:
       - key: GOOGLE_MAPS_API_KEY
         value: "" # Set in Render Dashboard
         sync: false
+      - key: OPENAI_API_KEY
+        value: "" # Set in Render Dashboard
+        sync: false
