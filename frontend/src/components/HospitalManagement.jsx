@@ -5,7 +5,7 @@ import {
   Activity, Bed, Pill, Users, AlertTriangle, CheckCircle,
   Clock, TrendingUp, DollarSign, RefreshCw, ArrowLeft, 
   Heart, Thermometer, Stethoscope, ShieldAlert, Package,
-  ChevronDown, ChevronUp, Edit3, Save, X
+  ChevronDown, ChevronUp, Edit3, Save, X, CreditCard
 } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 
@@ -502,7 +502,7 @@ export default function HospitalManagement() {
                                 className="p-1.5 rounded-lg bg-blue-500/10 text-blue-500 hover:bg-blue-500/20"
                                 title="Adjust Price +₹5"
                               >
-                                <trendingUp size={14} />
+                                <TrendingUp size={14} />
                               </button>
                             </div>
                           </td>
@@ -574,7 +574,7 @@ export default function HospitalManagement() {
                     value={`₹${(bookings.length * 4500).toLocaleString()}`} 
                     sub="Severity Adjusted" 
                     color="emerald" 
-                    icon={<trendingUp size={24} />} 
+                    icon={<TrendingUp size={24} />} 
                   />
                    <StatCard 
                     label="Avg. Case Value" 
