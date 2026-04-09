@@ -205,15 +205,37 @@ const manualBedUpdate = async (req, res) => {
 // ADD DOCTOR
 const addDoctor = async (req, res) => {
   try {
-    const { name, specialization, experience, shift } = req.body;
+    const { name, specialization, experience, shift, qualification, email } = req.body;
+    
+    const io = req.app.get('io');
+    if (io) {
+       io.emit('agent-activity', { 
+         agent: 'Credentialing Agent', 
+         message: `Verifying board certifications for Dr. ${name}...`, 
+         status: 'thinking' 
+       });
+    }
+
     const newDoc = new DoctorModel({
       name,
       specialization,
       experience,
-      shift,
+      qualification: qualification || 'MBBS, MD',
+      email: email || `dr.${name?.toLowerCase().replace(/\s/g, '')}@cortex.os`,
+      shift: shift || { start: '09:00', end: '17:00' },
       status: 'Available'
     });
+
     await newDoc.save();
+
+    if (io) {
+      io.emit('agent-activity', { 
+        agent: 'Credentialing Agent', 
+        message: `✅ Dr. ${name} (${specialization}) registered successfully.`, 
+        status: 'done' 
+      });
+    }
+
     return res.status(201).json({ success: true, data: newDoc });
   } catch (error) {
     return res.status(500).json({ success: false, message: error.message });

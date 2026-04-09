@@ -8,6 +8,7 @@ import {
   ChevronDown, ChevronUp, Edit3, Save, X, CreditCard, LogOut
 } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
+import toast from 'react-hot-toast';
 
 const SOCKET_URL = import.meta.env.VITE_API_URL || 'http://localhost:5000';
 const API = `${SOCKET_URL}/api/hospital`;
@@ -22,6 +23,10 @@ export default function HospitalManagement() {
   const [activeSection, setActiveSection] = useState('overview');
   const [socket, setSocket] = useState(null);
   const [realtimeAlerts, setRealtimeAlerts] = useState([]);
+  const [isAddModalOpen, setIsAddModalOpen] = useState(false);
+  const [newDocForm, setNewDocForm] = useState({
+    name: '', specialization: 'General Consultation', experience: '', qualification: '', email: '', shift: { start: '09:00', end: '17:00' }
+  });
 
   // Fetch dashboard data
   const fetchDashboard = async () => {
@@ -156,6 +161,27 @@ export default function HospitalManagement() {
       console.error('Doctor delete error:', err);
     }
   };
+   // Add Doctor
+   const handleAddDoctor = async (e) => {
+     e.preventDefault();
+     try {
+       const res = await fetch(`${API}/doctor`, {
+         method: 'POST',
+         headers: { 'Content-Type': 'application/json' },
+         body: JSON.stringify(newDocForm)
+       });
+       const json = await res.json();
+       if (json.success) {
+         toast.success(`Welcome to the team, Dr. ${newDocForm.name}!`);
+         setIsAddModalOpen(false);
+         setNewDocForm({ name: '', specialization: 'General Consultation', experience: '', qualification: '', email: '', shift: { start: '09:00', end: '17:00' } });
+         fetchDashboard();
+       }
+     } catch (err) {
+       console.error('Add doctor error:', err);
+       toast.error("Failed to onboard specialist.");
+     }
+   };
 
   if (loading) {
     return (
@@ -417,7 +443,7 @@ export default function HospitalManagement() {
                     <Users className="text-emerald-600" size={28} /> Doctor Roster
                   </h2>
                   <button 
-                    onClick={() => toast.success("Specialist creation form enabled for demo.")}
+                    onClick={() => setIsAddModalOpen(true)}
                     className="px-4 py-2 rounded-xl bg-emerald-500 text-white text-[10px] font-black uppercase tracking-widest hover:bg-emerald-600 shadow-lg shadow-emerald-500/20 transition-all active:scale-95"
                   >
                     + Add Specialist
@@ -425,11 +451,20 @@ export default function HospitalManagement() {
                 </div>
                 <div className="grid grid-cols-2 gap-6">
                   {doctors.map(doc => (
-                    <div key={doc._id} className="bg-white rounded-2xl border border-slate-200 p-6 flex items-start justify-between shadow-lg">
-                      <div>
-                        <h3 className="text-base font-bold">{doc.name}</h3>
-                        <p className="text-xs text-slate-500">{doc.specialization} · {doc.experience} yrs exp</p>
-                        <p className="text-[9px] text-slate-400 mt-1">Shift: {doc.shift?.start || '—'} → {doc.shift?.end || '—'}</p>
+                    <div key={doc._id} className="bg-white rounded-2xl border border-slate-200 p-6 flex items-start gap-4 shadow-lg hover:border-emerald-500/30 transition-all">
+                      <img 
+                        src={doc.profileImage || `https://ui-avatars.com/api/?name=${doc.name}&background=10b981&color=fff`} 
+                        alt={doc.name}
+                        className="w-16 h-16 rounded-2xl object-cover border-2 border-slate-100 shadow-sm"
+                      />
+                      <div className="flex-1">
+                        <h3 className="text-base font-black text-slate-800">{doc.name}</h3>
+                        <p className="text-[10px] font-bold text-emerald-600 uppercase tracking-tighter">{doc.specialization} · {doc.qualification || 'MBBS, MD'}</p>
+                        <p className="text-[10px] text-slate-500 mt-1">{doc.experience} Years Field Experience</p>
+                        <p className="text-[9px] text-slate-400 font-mono mt-1">{doc.email}</p>
+                        <div className="flex items-center gap-3 mt-3 text-[8px] font-black uppercase tracking-widest text-slate-400">
+                           <span className="flex items-center gap-1"><Clock size={10}/> {doc.shift?.start} - {doc.shift?.end}</span>
+                        </div>
                       </div>
                       <div className="flex flex-col items-end gap-2">
                         <span className={`text-[9px] font-black uppercase px-2.5 py-1 rounded-lg ${
@@ -452,7 +487,7 @@ export default function HospitalManagement() {
                           <button 
                             onClick={() => handleDeleteDoctor(doc._id)}
                             className="p-1.5 rounded-lg bg-red-500/10 text-red-500 hover:bg-red-500/20"
-                            title="Remove Doctor"
+                            title="Remove Staff"
                           >
                             <X size={14} />
                           </button>
@@ -660,6 +695,72 @@ export default function HospitalManagement() {
           </AnimatePresence>
         </main>
       </div>
+
+      {/* ADD SPECIALIST MODAL */}
+      <AnimatePresence>
+        {isAddModalOpen && (
+          <div className="fixed inset-0 z-[100] flex items-center justify-center p-6">
+            <motion.div 
+              initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}
+              onClick={() => setIsAddModalOpen(false)}
+              className="absolute inset-0 bg-slate-900/60 backdrop-blur-sm"
+            />
+            <motion.div 
+              initial={{ opacity: 0, scale: 0.9, y: 20 }}
+              animate={{ opacity: 1, scale: 1, y: 0 }}
+              exit={{ opacity: 0, scale: 0.9, y: 20 }}
+              className="relative w-full max-w-lg bg-white rounded-[2.5rem] shadow-2xl border border-slate-200 overflow-hidden"
+            >
+              <div className="bg-slate-900 p-8 text-white relative">
+                 <div className="absolute top-0 right-0 w-32 h-32 bg-emerald-500/20 blur-3xl rounded-full" />
+                 <h2 className="text-2xl font-black uppercase tracking-tight relative z-10">Add Medical <span className="text-emerald-400">Specialist</span></h2>
+                 <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest mt-1 relative z-10">CORTEX Staff Credentialing Terminal</p>
+                 <button onClick={() => setIsAddModalOpen(false)} className="absolute top-8 right-8 text-slate-400 hover:text-white transition-all">
+                    <X size={24} />
+                 </button>
+              </div>
+
+              <form onSubmit={handleAddDoctor} className="p-8 space-y-5">
+                <div className="grid grid-cols-2 gap-5">
+                   <div className="space-y-1.5">
+                      <label className="text-[10px] font-black uppercase text-slate-400 ml-1">Full Name</label>
+                      <input required type="text" value={newDocForm.name} onChange={e => setNewDocForm({...newDocForm, name: e.target.value})} className="w-full bg-slate-50 border border-slate-200 rounded-xl px-4 py-3 text-sm font-bold focus:outline-none focus:border-emerald-500 transition-all" placeholder="Dr. John Doe" />
+                   </div>
+                   <div className="space-y-1.5">
+                      <label className="text-[10px] font-black uppercase text-slate-400 ml-1">Department</label>
+                      <select value={newDocForm.specialization} onChange={e => setNewDocForm({...newDocForm, specialization: e.target.value})} className="w-full bg-slate-50 border border-slate-200 rounded-xl px-4 py-3 text-sm font-bold focus:outline-none focus:border-emerald-500 transition-all appearance-none cursor-pointer">
+                          {['General Consultation', 'Cardiology', 'Pediatrics', 'Orthopedics', 'Dermatology', 'Neurology', 'Surgery'].map(spec => (
+                            <option key={spec} value={spec}>{spec}</option>
+                          ))}
+                      </select>
+                   </div>
+                </div>
+
+                <div className="grid grid-cols-2 gap-5">
+                   <div className="space-y-1.5">
+                      <label className="text-[10px] font-black uppercase text-slate-400 ml-1">Qualifications</label>
+                      <input required type="text" value={newDocForm.qualification} onChange={e => setNewDocForm({...newDocForm, qualification: e.target.value})} className="w-full bg-slate-50 border border-slate-200 rounded-xl px-4 py-3 text-sm font-bold focus:outline-none focus:border-emerald-500 transition-all" placeholder="MD, FRCS" />
+                   </div>
+                   <div className="space-y-1.5">
+                      <label className="text-[10px] font-black uppercase text-slate-400 ml-1">Experience (Years)</label>
+                      <input required type="number" value={newDocForm.experience} onChange={e => setNewDocForm({...newDocForm, experience: e.target.value})} className="w-full bg-slate-50 border border-slate-200 rounded-xl px-4 py-3 text-sm font-bold focus:outline-none focus:border-emerald-500 transition-all" placeholder="12" />
+                   </div>
+                </div>
+
+                <div className="space-y-1.5">
+                   <label className="text-[10px] font-black uppercase text-slate-400 ml-1">Staff Email</label>
+                   <input required type="email" value={newDocForm.email} onChange={e => setNewDocForm({...newDocForm, email: e.target.value})} className="w-full bg-slate-50 border border-slate-200 rounded-xl px-4 py-3 text-sm font-bold focus:outline-none focus:border-emerald-500 transition-all" placeholder="john.doe@cortex-health.com" />
+                </div>
+
+                <div className="grid grid-cols-2 gap-5 pt-2">
+                   <button type="button" onClick={() => setIsAddModalOpen(false)} className="w-full py-4 rounded-2xl border border-slate-200 text-[10px] font-black uppercase tracking-widest text-slate-400 hover:bg-slate-50 transition-all">Cancel</button>
+                   <button type="submit" className="w-full py-4 rounded-2xl bg-emerald-500 text-white text-[10px] font-black uppercase tracking-widest shadow-xl shadow-emerald-500/20 hover:bg-emerald-600 transition-all">Assign Staff</button>
+                </div>
+              </form>
+            </motion.div>
+          </div>
+        )}
+      </AnimatePresence>
     </div>
   );
 }
