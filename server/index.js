@@ -1,5 +1,21 @@
 require('dotenv').config();
 
+// EMERGENCY DEBUGGING: Global Error Handlers
+process.on('uncaughtException', (err) => {
+    console.error('💥 UNCAUGHT EXCEPTION! Shutting down... ');
+    console.error(err.name, err.message);
+    console.error(err.stack);
+});
+
+process.on('unhandledRejection', (err) => {
+    console.error('💥 UNHANDLED REJECTION! Shutting down... ');
+    console.error(err.name, err.message);
+});
+
+console.log('🔍 [SYSTEM CHECK] Server spinning up...');
+console.log('🔍 [SYSTEM CHECK] MONGODB_URI exists:', !!process.env.MONGODB_URI);
+console.log('🔍 [SYSTEM CHECK] OPENROUTER_API_KEY exists:', !!process.env.OPENROUTER_API_KEY);
+
 const express = require('express');
 const http = require('http');
 const { Server } = require('socket.io');
